@@ -6,9 +6,12 @@ import '../widgets/quick_trade_bar.dart';
 import '../widgets/mobile_home.dart';
 import '../widgets/mobile_portfolio.dart';
 import '../widgets/mobile_settings.dart';
+import '../service/auth_service.dart';
+
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
+
 
   @override
   State<TradingScreen> createState() => _TradingScreenState();
@@ -30,7 +33,7 @@ class _TradingScreenState extends State<TradingScreen> {
       case 'trade':
         return Column(
           children: [
-            Expanded(child: ChartPlaceholder(symbol: selectedSymbol)),
+            Expanded(child: ChartScreen()),
             const QuickTradeBar(),
           ],
         );

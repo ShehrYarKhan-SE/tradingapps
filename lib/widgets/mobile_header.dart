@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../service/auth_service.dart';
+import '../screens/login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../screens/profile_screen.dart';
 
 class MobileHeader extends StatefulWidget {
   final String mode;
@@ -72,16 +76,16 @@ class _MobileHeaderState extends State<MobileHeader> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Trader Pro',
-                      style: TextStyle(
+                    Text(
+                      FirebaseAuth.instance.currentUser?.displayName ?? "User",
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      'trader@email.com',
+                      FirebaseAuth.instance.currentUser?.email ?? "",
                       style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 12,
@@ -152,7 +156,43 @@ class _MobileHeaderState extends State<MobileHeader> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => Navigator.pop(context),
+        onTap: () async {
+          Navigator.pop(context);
+
+          if (isLogout) {
+            bool? confirm = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text("Logout"),
+                content: const Text("Are you sure you want to logout?"),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text("Cancel"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text("Logout"),
+                  ),
+                ],
+              ),
+            );
+
+            if (confirm == true) {
+              await AuthService.logout();
+
+              if (!context.mounted) return;
+
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const LoginScreen(),
+                ),
+                    (route) => false,
+              );
+            }
+          }
+        },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -335,7 +375,14 @@ class _MobileHeaderState extends State<MobileHeader> {
         children: [
           // Left - User Profile
           GestureDetector(
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            },
             child: Row(
               children: [
                 Stack(
@@ -366,8 +413,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Example',
+                     Text(
+                      FirebaseAuth.instance.currentUser?.displayName ?? "User",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,

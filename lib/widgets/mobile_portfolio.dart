@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 
-class MobilePortfolio extends StatelessWidget {
+class MobilePortfolio extends StatefulWidget {
   const MobilePortfolio({super.key});
 
+  @override
+  State<MobilePortfolio> createState() => _MobilePortfolioState();
+}
+
+class _MobilePortfolioState extends State<MobilePortfolio> {
+  bool _showBalance = true;
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -50,12 +56,25 @@ class MobilePortfolio extends StatelessWidget {
                         Text('Total Balance', style: TextStyle(color: Colors.grey[400], fontSize: 14)),
                       ],
                     ),
-                    Icon(Icons.visibility_outlined, color: Colors.grey[400], size: 20),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _showBalance = !_showBalance;
+                        });
+                      },
+                      icon: Icon(
+                        _showBalance
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        color: Colors.grey[400],
+                        size: 20,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  '\$100000',
+                Text(
+                  _showBalance ? '\$100000' : '*******',
                   style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
@@ -80,6 +99,7 @@ class MobilePortfolio extends StatelessWidget {
                     Text('+\$1,245.67', style: TextStyle(color: Colors.green[400], fontSize: 14)),
                   ],
                 ),
+
               ],
             ),
           ),
@@ -98,8 +118,39 @@ class MobilePortfolio extends StatelessWidget {
             ),
           ),
 
+
           const SizedBox(height: 24),
 
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Performance',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Row(
+                  children: [
+                    _buildTimeButton('1D'),
+                    const SizedBox(width: 6),
+                    _buildTimeButton('1W'),
+                    const SizedBox(width: 6),
+                    _buildTimeButton('1M'),
+                    const SizedBox(width: 6),
+                    _buildTimeButton('1Y'),
+
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
           // Holdings Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -142,7 +193,29 @@ class MobilePortfolio extends StatelessWidget {
       ),
     );
   }
-
+  Widget _buildTimeButton(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 5,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[400],
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
   Widget _buildHoldingItem(String symbol, String name, String icon, double amount, double value, double change) {
     final isPositive = change >= 0;
     return Container(

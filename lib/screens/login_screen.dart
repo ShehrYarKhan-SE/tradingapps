@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'registration_screen.dart';
 import 'trading_screen.dart';
+import 'registration_screen.dart';
+import '../service/auth_service.dart';
+import '../widgets/auth_widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,135 +12,166 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool isPasswordVisible = false;
-  bool isLoading = false;
-
   final _formKey = GlobalKey<FormState>();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true ;
 
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  final _emailRegex = RegExp(r'^[\w\.\-]+@[\w\-]+\.[a-zA-Z]{2,}$');
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  void _showMessage(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: isError ? Colors.redAccent : Colors.green),
+    );
+  }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
-    setState(() => isLoading = true);
+    final result = await AuthService.login(
+      email: _emailCtrl.text,
+      password: _passwordCtrl.text,
+    );
 
-    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    setState(() => _isLoading = false);
 
-    setState(() => isLoading = false);
+    if (result.success) {
 
-    if (mounted) {
+      _showMessage("Login Successful", isError: false);
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted) return;
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => const TradingScreen(),
         ),
       );
+    } else {
+      _showMessage(result.message);
     }
-  }
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Container(
-            width: 350,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Login",
-                    style:
-                    TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+      body: Stack(
+        children: [
+          Container(color: const Color(0xFF05060B)),
+          Positioned.fill(child: CustomPaint(painter: StreakPainter())),
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: Container(
+                width: 320,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF12305C), Color(0xFF0A1730)],
                   ),
-                  const SizedBox(height: 5),
-                  const Text("Welcome Back!"),
-                  const SizedBox(height: 20),
-
-                  TextFormField(
-                    controller: emailController,
-                    validator: (value) =>
-                    value!.isEmpty ? "Please enter email" : null,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.person),
-                      labelText: "Email or Username",
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
-                  TextFormField(
-                    controller: passwordController,
-                    obscureText: !isPasswordVisible,
-                    validator: (value) =>
-                    value!.isEmpty ? "Please enter password" : null,
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(Icons.lock),
-                      labelText: "Password",
-                      suffixIcon: IconButton(
-                        icon: Icon(isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off),
-                        onPressed: () {
-                          setState(() {
-                            isPasswordVisible = !isPasswordVisible;
-                          });
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF2E9BFF).withOpacity(0.35)),
+                  boxShadow: [
+                    BoxShadow(color: const Color(0xFF2E9BFF).withOpacity(0.25), blurRadius: 30, spreadRadius: 2),
+                  ],
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Login', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 6),
+                      Text('Welcome Back!', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                      const SizedBox(height: 28),
+                      AuthInputField(
+                        hint: 'Email',
+                        icon: Icons.person,
+                        controller: _emailCtrl,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return 'Enter your Email';
+                          if (!_emailRegex.hasMatch(v.trim())) return 'Enter Valid Email';
+                          return null;
                         },
                       ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: isLoading ? null : _handleLogin,
-                      child: isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Login"),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-                  const Text("Don’t have an account?"),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const RegistrationScreen(),
+                      const SizedBox(height: 14),
+                      AuthInputField(
+                        hint: 'Password',
+                        icon: Icons.lock,
+                        controller: _passwordCtrl,
+                        obscureText: _obscurePassword,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white70,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                      );
-                    },
-                    child: const Text("Sign Up"),
+                        validator: (v) {
+                          if (v == null || v.isEmpty) return 'Enter Password';
+                          if (v.length < 6) return 'Enter 6 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text('Forgot Password?', style: TextStyle(color: const Color(0xFF2E9BFF), fontSize: 12)),
+                      ),
+                      const SizedBox(height: 18),
+                      AuthSubmitButton(
+                        text: 'Login',
+                        gradient: const [Color(0xFF2E9BFF), Color(0xFF1657C9)],
+                        isLoading: _isLoading,
+                        onTap: _handleLogin,
+                      ),
+                      const SizedBox(height: 22),
+                      const SocialRow(label: 'Or Sign in with'),
+                      const SizedBox(height: 22),
+                      Column(
+                        children: [
+                          Text("Don't have an account?", style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const RegistrationScreen()),
+                              );
+                            },
+                            child: const Text(
+                              'Sign Up',
+                              style: TextStyle(color: Color(0xFF2E9BFF), fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 class MobileSettings extends StatelessWidget {
   const MobileSettings({super.key});
 
@@ -41,8 +41,21 @@ class MobileSettings extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Example', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                    Text('trader@example.com', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                    Text(
+                      FirebaseAuth.instance.currentUser?.displayName ?? "User",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      FirebaseAuth.instance.currentUser?.email ?? "",
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),

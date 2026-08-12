@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/profile_screen.dart';
 
 class BottomNavigation extends StatelessWidget {
   final String activeTab;
@@ -17,7 +18,7 @@ class BottomNavigation extends StatelessWidget {
       {'id': 'trade', 'icon': Icons.swap_horiz, 'activeIcon': Icons.swap_horiz, 'label': 'Trade'},
       {'id': 'chart', 'icon': Icons.show_chart, 'activeIcon': Icons.show_chart, 'label': 'Chart', 'isMain': true},
       {'id': 'portfolio', 'icon': Icons.account_balance_wallet_outlined, 'activeIcon': Icons.account_balance_wallet, 'label': 'Portfolio'},
-      {'id': 'settings', 'icon': Icons.settings_outlined, 'activeIcon': Icons.settings, 'label': 'Settings'},
+      {'id': 'profile', 'icon': Icons.person_outline, 'activeIcon': Icons.person, 'label': 'Profile'},
     ];
 
     return Container(
@@ -31,15 +32,29 @@ class BottomNavigation extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: navItems.map((item) {
-          final isActive = activeTab == item['id'];
+          final id = item['id'] as String;
+          final isActive = activeTab == id;
           final isMain = item['isMain'] == true;
+
+          void handleTap() {
+            if (id == 'profile') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileScreen(),
+                ),
+              );
+            } else {
+              onTabChange(id);
+            }
+          }
 
           if (isMain) {
             return _buildMainButton(
               icon: item['icon'] as IconData,
               label: item['label'] as String,
               isActive: isActive,
-              onTap: () => onTabChange(item['id'] as String),
+              onTap: handleTap,
             );
           }
 
@@ -47,7 +62,7 @@ class BottomNavigation extends StatelessWidget {
             icon: (isActive ? item['activeIcon'] : item['icon']) as IconData,
             label: item['label'] as String,
             isActive: isActive,
-            onTap: () => onTabChange(item['id'] as String),
+            onTap: handleTap,
           );
         }).toList(),
       ),

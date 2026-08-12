@@ -7,7 +7,7 @@ import '../widgets/mobile_home.dart';
 import '../widgets/mobile_portfolio.dart';
 import '../widgets/mobile_settings.dart';
 import '../service/auth_service.dart';
-
+import 'profile_screen.dart';
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
@@ -39,6 +39,8 @@ class _TradingScreenState extends State<TradingScreen> {
         );
       case 'portfolio':
         return const MobilePortfolio();
+      case 'profile':
+        return const ProfileScreen();
       case 'settings':
         return const MobileSettings();
       default:

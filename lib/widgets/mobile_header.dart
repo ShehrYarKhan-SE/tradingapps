@@ -3,6 +3,8 @@ import '../service/auth_service.dart';
 import '../screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/profile_screen.dart';
+import '../screens/Notification_Screen.dart';
+import 'mobile_settings.dart';
 
 class MobileHeader extends StatefulWidget {
   final String mode;
@@ -35,13 +37,86 @@ class _MobileHeaderState extends State<MobileHeader> {
 
   Widget _buildMenuSheet() {
     final menuItems = [
-      {'icon': Icons.person, 'label': 'Profile', 'subtitle': 'View your profile', 'color': Colors.blue},
-      {'icon': Icons.shield, 'label': 'Security', 'subtitle': '2FA & Password', 'color': Colors.green},
-      {'icon': Icons.account_balance_wallet, 'label': 'Wallet', 'subtitle': 'Manage funds', 'color': Colors.purple},
-      {'icon': Icons.card_giftcard, 'label': 'Rewards', 'subtitle': 'Claim bonuses', 'color': Colors.orange},
-      {'icon': Icons.star, 'label': 'VIP Status', 'subtitle': 'Pro Member', 'color': Colors.yellow},
-      {'icon': Icons.settings, 'label': 'Settings', 'subtitle': 'App preferences', 'color': Colors.grey},
-      {'icon': Icons.help, 'label': 'Help Center', 'subtitle': 'Get support', 'color': Colors.cyan},
+      {
+        'icon': Icons.person,
+        'label': 'Profile',
+        'subtitle': 'View your profile',
+        'color': Colors.blue,
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ProfileScreen()),
+          );
+        },
+      },
+      {
+        'icon': Icons.shield,
+        'label': 'Security',
+        'subtitle': '2FA & Password',
+        'color': Colors.green,
+        'onTap': () {
+          // TODO: navigate to your Security screen
+        },
+      },
+      {
+        'icon': Icons.account_balance_wallet,
+        'label': 'Wallet',
+        'subtitle': 'Manage funds',
+        'color': Colors.purple,
+        'onTap': () {
+          // TODO: navigate to your Wallet screen
+        },
+      },
+      {
+        'icon': Icons.card_giftcard,
+        'label': 'Rewards',
+        'subtitle': 'Claim bonuses',
+        'color': Colors.orange,
+        'onTap': () {
+          // TODO: navigate to your Rewards screen
+        },
+      },
+      {
+        'icon': Icons.star,
+        'label': 'VIP Status',
+        'subtitle': 'Pro Member',
+        'color': Colors.yellow,
+        'onTap': () {
+          // TODO: navigate to your VIP Status screen
+        },
+      },
+      {
+        'icon': Icons.settings,
+        'label': 'Settings',
+        'subtitle': 'App preferences',
+        'color': Colors.grey,
+        'onTap': () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Scaffold(
+                backgroundColor: const Color(0xFF0D0D0F),
+                appBar: AppBar(
+                  backgroundColor: const Color(0xFF0D0D0F),
+                  elevation: 0,
+                  title: const Text("Settings", style: TextStyle(color: Colors.white)),
+                  iconTheme: const IconThemeData(color: Colors.white),
+                ),
+                body: const MobileSettings(),
+              ),
+            ),
+          );
+        },
+      },
+      {
+        'icon': Icons.help,
+        'label': 'Help Center',
+        'subtitle': 'Get support',
+        'color': Colors.cyan,
+        'onTap': () {
+          // TODO: navigate to your Help Center screen
+        },
+      },
     ];
 
     return Container(
@@ -124,6 +199,7 @@ class _MobileHeaderState extends State<MobileHeader> {
             label: item['label'] as String,
             subtitle: item['subtitle'] as String,
             color: item['color'] as Color,
+            onTap: item['onTap'] as VoidCallback,
           )),
           // Logout
           Container(
@@ -139,6 +215,7 @@ class _MobileHeaderState extends State<MobileHeader> {
               subtitle: 'Sign out of your account',
               color: Colors.red,
               isLogout: true,
+              onTap: () {},
             ),
           ),
         ],
@@ -151,6 +228,7 @@ class _MobileHeaderState extends State<MobileHeader> {
     required String label,
     required String subtitle,
     required Color color,
+    required VoidCallback onTap,
     bool isLogout = false,
   }) {
     return Material(
@@ -191,6 +269,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                     (route) => false,
               );
             }
+          } else {
+            onTap();
           }
         },
         borderRadius: BorderRadius.circular(12),
@@ -413,9 +493,9 @@ class _MobileHeaderState extends State<MobileHeader> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     Text(
+                    Text(
                       FirebaseAuth.instance.currentUser?.displayName ?? "User",
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -443,7 +523,7 @@ class _MobileHeaderState extends State<MobileHeader> {
 
           const Spacer(),
 
-          // Center - Symbol Selector
+          // Center - App Branding
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -453,17 +533,17 @@ class _MobileHeaderState extends State<MobileHeader> {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [
+              children: const [
+                Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
+                SizedBox(width: 6),
                 Text(
-                  widget.symbol,
-                  style: const TextStyle(
+                  "TradeMaster AI",
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down, color: Colors.grey[400], size: 18),
               ],
             ),
           ),
@@ -487,7 +567,14 @@ class _MobileHeaderState extends State<MobileHeader> {
               const SizedBox(width: 8),
               // Notifications
               _buildShinyButton(
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationsScreen(),
+                    ),
+                  );
+                },
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [

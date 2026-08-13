@@ -46,48 +46,20 @@ class MobileHome extends StatelessWidget {
         children: [
           const SizedBox(height: 12),
 
-          // ---------------- Pair selector ----------------
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white.withOpacity(0.08)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    "BTC/USDT",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Icon(Icons.keyboard_arrow_down, color: Colors.white70),
-                ],
-              ),
-            ),
-          ),
-
           // ---------------- Welcome Card ----------------
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                colors: [Color(0xFF0B1229), Color(0xFF13214A), Color(0xFF1B1450)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF8B5CF6).withOpacity(0.3),
+                  color: const Color(0xFF3B82F6).withOpacity(0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -110,8 +82,7 @@ class MobileHome extends StatelessWidget {
                 // Decorative target + bar-chart graphic (approximates the artwork)
                 Positioned(
                   right: -6,
-                  top: 0,
-                  bottom: 0,
+                  top: 8,
                   child: _buildTargetGraphic(),
                 ),
                 Column(
@@ -285,75 +256,89 @@ class MobileHome extends StatelessWidget {
 
   Widget _buildTargetGraphic() {
     return SizedBox(
-      width: 150,
-      height: 130,
+      width: 160,
+      height: 150,
       child: Stack(
+        clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // Growing bar chart, sits behind/right of the target
+          // Growing gradient bar chart with glow, sits behind/right of target
           Positioned(
-            right: 0,
-            bottom: 10,
+            right: -4,
+            bottom: 14,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _bar(18),
+                _bar(16),
                 const SizedBox(width: 5),
-                _bar(32),
+                _bar(30),
                 const SizedBox(width: 5),
-                _bar(50),
+                _bar(48),
                 const SizedBox(width: 5),
                 _bar(68),
               ],
             ),
           ),
-          // Concentric target circles
+          // Concentric glowing target rings
           Positioned(
-            left: 8,
-            top: 10,
+            left: 10,
+            top: 28,
             child: Container(
-              width: 78,
-              height: 78,
+              width: 84,
+              height: 84,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.35), width: 2),
+                border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.35), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF3B82F6).withOpacity(0.35),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                  ),
+                ],
               ),
               alignment: Alignment.center,
               child: Container(
-                width: 54,
-                height: 54,
+                width: 60,
+                height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.5), width: 2),
+                  border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.55), width: 2),
                 ),
                 alignment: Alignment.center,
                 child: Container(
-                  width: 30,
-                  height: 30,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.7), width: 2),
+                    border: Border.all(color: const Color(0xFF93C5FD).withOpacity(0.8), width: 2),
                   ),
                   alignment: Alignment.center,
                   child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: const BoxDecoration(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF60A5FA).withOpacity(0.9),
+                          blurRadius: 12,
+                          spreadRadius: 2,
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
           ),
-          // Arrow flying into the bullseye
-          Positioned(
-            left: 30,
-            top: -8,
-            child: Transform.rotate(
-              angle: pi / 4,
-              child: const Icon(Icons.arrow_upward, color: Colors.white, size: 34),
+          // Arrow, drawn precisely with a CustomPainter so it's always a
+          // clean straight line piercing the target's center, with the tip
+          // poking out past the top-right edge of the rings.
+          const Positioned.fill(
+            child: CustomPaint(
+              painter: _TargetArrowPainter(),
             ),
           ),
         ],
@@ -366,15 +351,18 @@ class MobileHome extends StatelessWidget {
       width: 12,
       height: height,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
-          colors: [
-            Colors.white.withOpacity(0.25),
-            Colors.white.withOpacity(0.85),
-          ],
+          colors: [Color(0xFF1D4ED8), Color(0xFF60A5FA), Color(0xFFBFDBFE)],
         ),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.5),
+            blurRadius: 8,
+          ),
+        ],
       ),
     );
   }
@@ -397,6 +385,77 @@ class MobileHome extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildCoinIcon(String symbol) {
+    final base = symbol.split('/').first.toUpperCase();
+
+    late final Gradient gradient;
+    late final Widget glyph;
+
+    switch (base) {
+      case 'BTC':
+        gradient = const LinearGradient(
+          colors: [Color(0xFFF7931A), Color(0xFFEA580C)],
+        );
+        glyph = const Text(
+          "\u20BF",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 22),
+        );
+        break;
+      case 'ETH':
+        gradient = const LinearGradient(
+          colors: [Color(0xFF3C3C50), Color(0xFF1E1E2E)],
+        );
+        glyph = Transform.rotate(
+          angle: pi / 4,
+          child: Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        );
+        break;
+      case 'SOL':
+        gradient = const LinearGradient(
+          colors: [Color(0xFF9945FF), Color(0xFF14F195)],
+        );
+        glyph = const Text(
+          "S",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        );
+        break;
+      case 'DOGE':
+        gradient = const LinearGradient(
+          colors: [Color(0xFFC9A227), Color(0xFF8C6D1F)],
+        );
+        glyph = const Text(
+          "\u0110",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+        );
+        break;
+      default:
+        gradient = const LinearGradient(
+          colors: [Color(0xFFF97316), Color(0xFFEA580C)],
+        );
+        glyph = Text(
+          base.isNotEmpty ? base[0] : "?",
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+        );
+    }
+
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Center(child: glyph),
     );
   }
 
@@ -423,23 +482,7 @@ class MobileHome extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFF97316), Color(0xFFEA580C)],
-                ),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Center(
-                child: Text(
-                  symbol[0],
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-                ),
-              ),
-            ),
+            _buildCoinIcon(symbol),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -603,13 +646,13 @@ class MobileHome extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text("ðŸ”¥", style: TextStyle(fontSize: 16)),
+              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 18),
             ],
           ),
           SizedBox(height: 16),
           Row(
             children: [
-              Text("ðŸ”¥", style: TextStyle(fontSize: 22)),
+              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 24),
               SizedBox(width: 8),
               Text(
                 "7 Days",
@@ -652,6 +695,58 @@ class _Sparkline extends StatelessWidget {
       size: Size.infinite,
     );
   }
+}
+
+/// Draws a single clean straight arrow (shaft + triangular head) diagonally
+/// across the target graphic, from lower-left toward the upper-right.
+class _TargetArrowPainter extends CustomPainter {
+  const _TargetArrowPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Anchored relative to the target circle, which sits at
+    // left:10, top:28, 84x84 -> center is roughly (52, 70).
+    final start = Offset(30, 108);
+    final end = Offset(128, 6);
+
+    final angle = atan2(end.dy - start.dy, end.dx - start.dx);
+
+    // Soft glow pass underneath.
+    final glowPaint = Paint()
+      ..color = Colors.white.withOpacity(0.35)
+      ..strokeWidth = 8
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawLine(start, end, glowPaint);
+
+    // Crisp shaft on top.
+    final shaftPaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(start, end, shaftPaint);
+
+    // Arrowhead triangle at the tip, pointing along the shaft's direction.
+    const arrowLength = 16.0;
+    const arrowSpread = pi / 7;
+    final p2 = Offset(
+      end.dx - arrowLength * cos(angle - arrowSpread),
+      end.dy - arrowLength * sin(angle - arrowSpread),
+    );
+    final p3 = Offset(
+      end.dx - arrowLength * cos(angle + arrowSpread),
+      end.dy - arrowLength * sin(angle + arrowSpread),
+    );
+    final headPath = Path()
+      ..moveTo(end.dx, end.dy)
+      ..lineTo(p2.dx, p2.dy)
+      ..lineTo(p3.dx, p3.dy)
+      ..close();
+    canvas.drawPath(headPath, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TargetArrowPainter oldDelegate) => false;
 }
 
 class _SparklinePainter extends CustomPainter {

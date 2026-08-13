@@ -10,12 +10,14 @@ class MobileHeader extends StatefulWidget {
   final String mode;
   final Function(String) onModeChange;
   final String symbol;
+  final VoidCallback? onSymbolTap;
 
   const MobileHeader({
     super.key,
     required this.mode,
     required this.onModeChange,
     required this.symbol,
+    this.onSymbolTap,
   });
 
   @override
@@ -451,121 +453,48 @@ class _MobileHeaderState extends State<MobileHeader> {
           bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left - User Profile
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
+          // ---------- Top row: hamburger - branding - notifications ----------
+          Row(
+            children: [
+              // Hamburger menu (now where profile used to be) - clickable
+              _buildShinyButton(
+                onTap: _showMenu,
+                child: Icon(Icons.menu, color: Colors.grey[300], size: 20),
+              ),
+
+              const Spacer(),
+
+              // Center - App Branding
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
-              );
-            },
-            child: Row(
-              children: [
-                Stack(
-                  children: [
-                    _buildShinyAvatar(40),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF10B981),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF0D0D0F), width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF10B981).withOpacity(0.8),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
+                    SizedBox(width: 6),
                     Text(
-                      FirebaseAuth.instance.currentUser?.displayName ?? "User",
-                      style: const TextStyle(
+                      "TradeMaster AI",
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Row(
-                      children: [
-                        Text(
-                          'PRO',
-                          style: TextStyle(
-                            color: Colors.purple[400],
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        const Icon(Icons.star, color: Colors.yellow, size: 12),
-                      ],
-                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Center - App Branding
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
-                SizedBox(width: 6),
-                Text(
-                  "TradeMaster AI",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Right - Actions
-          Row(
-            children: [
-              // Mode Toggle
-              _buildShinyButton(
-                isActive: widget.mode == 'ai',
-                activeColor: const Color(0xFF8B5CF6),
-                onTap: () => widget.onModeChange(widget.mode == 'demo' ? 'ai' : 'demo'),
-                child: Icon(
-                  widget.mode == 'ai' ? Icons.psychology : Icons.bolt,
-                  color: widget.mode == 'ai' ? const Color(0xFFA855F7) : const Color(0xFF3B82F6),
-                  size: 20,
-                ),
               ),
-              const SizedBox(width: 8),
-              // Notifications
+
+              const Spacer(),
+
+              // Notifications - clickable
               _buildShinyButton(
                 onTap: () {
                   Navigator.push(
@@ -610,11 +539,111 @@ class _MobileHeaderState extends State<MobileHeader> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              // Menu
-              _buildShinyButton(
-                onTap: _showMenu,
-                child: Icon(Icons.menu, color: Colors.grey[400], size: 20),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // ---------- Second row: profile (moved down) - BTC/USDT (smaller) ----------
+          Row(
+            children: [
+              // Profile - clickable, moved below the top row
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProfileScreen(),
+                      ),
+                    );
+                  },
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    children: [
+                      Stack(
+                        children: [
+                          _buildShinyAvatar(34),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFF0D0D0F), width: 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF10B981).withOpacity(0.8),
+                                    blurRadius: 6,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            FirebaseAuth.instance.currentUser?.displayName ?? "User",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'PRO',
+                                style: TextStyle(
+                                  color: Colors.purple[400],
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              const Icon(Icons.star, color: Colors.yellow, size: 11),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // BTC/USDT - made smaller, clickable if onSymbolTap is provided
+              GestureDetector(
+                onTap: widget.onSymbolTap,
+                behavior: HitTestBehavior.opaque,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.symbol,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Icon(Icons.keyboard_arrow_down, color: Colors.grey[400], size: 16),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),

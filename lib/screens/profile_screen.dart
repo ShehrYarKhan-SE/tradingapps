@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'Notification_Screen.dart';
-import '../widgets/mobile_settings.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -187,7 +186,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == true) {
       await FirebaseAuth.instance.signOut();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        // Go to Login screen and remove all previous routes from the stack.
+        // Replace `LoginScreen()` below with your actual login widget.
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+              (route) => false,
+        );
+      }
     }
   }
 
@@ -217,7 +223,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == true) {
       await FirebaseAuth.instance.currentUser?.delete();
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+              (route) => false,
+        );
+      }
     }
   }
 
@@ -265,20 +276,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: bgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.menu,
-            color: textPrimary,
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const Scaffold(
-                  body: MobileSettings(),
-                ),
-              ),
-            );
-          },
+          icon: const Icon(Icons.arrow_back, color: textPrimary),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -299,24 +298,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           Stack(
             children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.notifications_none,
-                  color: textPrimary,
-                  size: 26,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationsScreen(),
-                    ),
-                  );
-                },
+              const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(Icons.notifications_none, color: textPrimary, size: 26),
               ),
               Positioned(
-                right: 8,
-                top: 2,
+                right: 12,
+                top: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: const BoxDecoration(
@@ -325,10 +313,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: const Text(
                     "3",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 10),
                   ),
                 ),
               ),
@@ -669,7 +654,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
 
-
+      // ---------------- Bottom Navigation ----------------
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: cardColor,
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 4,
+        selectedItemColor: accentBlue,
+        unselectedItemColor: textSecondary,
+        onTap: (index) {
+          // TODO: hook this up to your app's navigation
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: "Trade"),
+          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: "Chart"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.account_balance_wallet_outlined), label: "Portfolio"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
     );
   }
 

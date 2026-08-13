@@ -11,220 +11,75 @@ class BottomNavigation extends StatelessWidget {
     required this.onTabChange,
   });
 
+  static const Color activeColor = Color(0xFF3B82F6);
+  static const Color inactiveColor = Colors.white54;
+
   @override
   Widget build(BuildContext context) {
     final navItems = [
       {'id': 'home', 'icon': Icons.home_outlined, 'activeIcon': Icons.home, 'label': 'Home'},
       {'id': 'trade', 'icon': Icons.swap_horiz, 'activeIcon': Icons.swap_horiz, 'label': 'Trade'},
-      {'id': 'chart', 'icon': Icons.show_chart, 'activeIcon': Icons.show_chart, 'label': 'Chart', 'isMain': true},
+      {'id': 'chart', 'icon': Icons.show_chart, 'activeIcon': Icons.show_chart, 'label': 'Chart'},
       {'id': 'portfolio', 'icon': Icons.account_balance_wallet_outlined, 'activeIcon': Icons.account_balance_wallet, 'label': 'Portfolio'},
       {'id': 'profile', 'icon': Icons.person_outline, 'activeIcon': Icons.person, 'label': 'Profile'},
     ];
 
     return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 24, left: 8, right: 8),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0D0D0F).withOpacity(0.95),
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.1)),
-        ),
+        color: const Color(0xFF141B2E).withOpacity(0.95),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: navItems.map((item) {
           final id = item['id'] as String;
           final isActive = activeTab == id;
-          final isMain = item['isMain'] == true;
 
-          void handleTap() {
-            if (id == 'profile') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ProfileScreen(),
-                ),
-              );
-            } else {
-              onTabChange(id);
-            }
-          }
-
-          if (isMain) {
-            return _buildMainButton(
-              icon: item['icon'] as IconData,
-              label: item['label'] as String,
-              isActive: isActive,
-              onTap: handleTap,
-            );
-          }
-
-          return _buildNavItem(
-            icon: (isActive ? item['activeIcon'] : item['icon']) as IconData,
-            label: item['label'] as String,
-            isActive: isActive,
-            onTap: handleTap,
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildMainButton({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Transform.translate(
-            offset: const Offset(0, -12),
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(isActive ? 0.6 : 0.3),
-                    blurRadius: isActive ? 30 : 20,
-                    spreadRadius: isActive ? 2 : 0,
-                  ),
-                  const BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Center(child: Icon(icon, color: Colors.white, size: 28)),
-                  // Shine effect
-                  Positioned(
-                    top: 4,
-                    left: 16,
-                    right: 16,
-                    child: Container(
-                      height: 20,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.3),
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: const Offset(0, -8),
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isActive ? const Color(0xFFA855F7) : Colors.grey[500],
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isActive ? Colors.white.withOpacity(0.1) : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Stack(
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (id == 'profile') {
+                // Profile is a full standalone screen, so push it instead
+                // of swapping the tab body like the other tabs.
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                );
+              } else {
+                onTabChange(id);
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  icon,
-                  color: isActive ? const Color(0xFF3B82F6) : Colors.grey[500],
-                  size: 22,
+                  isActive ? item['activeIcon'] as IconData : item['icon'] as IconData,
+                  color: isActive ? activeColor : inactiveColor,
+                  size: 24,
                 ),
-                if (isActive)
-                  Positioned(
-                    top: 0,
-                    left: 4,
-                    right: 4,
-                    child: Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.2),
-                            Colors.transparent,
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
+                const SizedBox(height: 4),
+                Text(
+                  item['label'] as String,
+                  style: TextStyle(
+                    color: isActive ? activeColor : inactiveColor,
+                    fontSize: 11,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                   ),
-                if (isActive)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3B82F6),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.8),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? const Color(0xFF3B82F6) : Colors.grey[500],
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+          );
+        }).toList(),
       ),
     );
   }

@@ -13,13 +13,7 @@ class QuickTradeBar extends StatelessWidget {
           top: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(child: _buildButton('Buy / Long', const Color(0xFF10B981), const Color(0xFF059669))),
-          const SizedBox(width: 12),
-          Expanded(child: _buildButton('Sell / Short', const Color(0xFFEF4444), const Color(0xFFDC2626))),
-        ],
-      ),
+
     );
   }
 

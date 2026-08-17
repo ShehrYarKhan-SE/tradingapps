@@ -7,7 +7,7 @@ import '../widgets/mobile_home.dart';
 import '../widgets/mobile_portfolio.dart';
 import '../widgets/mobile_settings.dart';
 import '../service/auth_service.dart';
-import 'profile_screen.dart';
+
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
@@ -30,7 +30,10 @@ class _TradingScreenState extends State<TradingScreen> {
       case 'home':
         return MobileHome(onTabChange: setActiveTab);
       case 'chart':
+      // Chart tab: full-screen chart, no buy/sell controls.
+        return const ChartScreen();
       case 'trade':
+      // Trade tab: chart with quick buy/sell controls below it.
         return Column(
           children: [
             Expanded(child: ChartScreen()),
@@ -39,8 +42,6 @@ class _TradingScreenState extends State<TradingScreen> {
         );
       case 'portfolio':
         return const MobilePortfolio();
-      case 'profile':
-        return const ProfileScreen();
       case 'settings':
         return const MobileSettings();
       default:

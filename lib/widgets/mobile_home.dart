@@ -136,7 +136,7 @@ class MobileHome extends StatelessWidget {
           // ---------------- Welcome Card ----------------
           Container(
             margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFF0B1229), Color(0xFF13214A), Color(0xFF1B1450)],
@@ -169,7 +169,7 @@ class MobileHome extends StatelessWidget {
                 // Decorative target + bar-chart graphic (approximates the artwork)
                 Positioned(
                   right: -6,
-                  top: 8,
+                  top: -10,
                   child: _buildTargetGraphic(),
                 ),
                 Column(
@@ -183,14 +183,14 @@ class MobileHome extends StatelessWidget {
                     const Text(
                       'Ready to practice?',
                       style: TextStyle(
-                          color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                          color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Trade with virtual money,\nlearn with real confidence.',
                       style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
                     ),
-                    const SizedBox(height: 44),
+                    const SizedBox(height: 24),
                     Row(
                       children: [
                         Expanded(
@@ -356,7 +356,7 @@ class MobileHome extends StatelessWidget {
           // Growing gradient bar chart with glow, sits behind/right of target
           Positioned(
             right: -4,
-            bottom: 14,
+            bottom: 26,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -461,7 +461,7 @@ class MobileHome extends StatelessWidget {
   Widget _buildCardButton(String label, IconData icon, Color bg, Color fg) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(100),

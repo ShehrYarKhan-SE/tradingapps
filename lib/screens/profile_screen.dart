@@ -653,26 +653,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-
-      // ---------------- Bottom Navigation ----------------
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: cardColor,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 4,
-        selectedItemColor: accentBlue,
-        unselectedItemColor: textSecondary,
-        onTap: (index) {
-          // TODO: hook this up to your app's navigation
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: "Trade"),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: "Chart"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined), label: "Portfolio"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
-      ),
     );
   }
 

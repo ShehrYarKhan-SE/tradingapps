@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../screens/profile_screen.dart';
 
 class MobileHome extends StatelessWidget {
   final Function(String) onTabChange;
@@ -45,6 +47,91 @@ class MobileHome extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
+
+          // ---------------- Profile (home page only, scrolls away) ----------------
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(2),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Color(0xFF1A1A1F),
+                          ),
+                          child: Icon(Icons.person, color: Colors.grey[400], size: 17),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFF0D0D0F), width: 2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        FirebaseAuth.instance.currentUser?.displayName ?? "User",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'PRO',
+                            style: TextStyle(
+                              color: Colors.purple[400],
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          const Icon(Icons.star, color: Colors.yellow, size: 11),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // ---------------- Welcome Card ----------------
           Container(
@@ -103,26 +190,30 @@ class MobileHome extends StatelessWidget {
                       'Trade with virtual money,\nlearn with real confidence.',
                       style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 44),
                     Row(
                       children: [
-                        GestureDetector(
-                          onTap: () => onTabChange('trade'),
-                          child: _buildCardButton(
-                            'Demo Mode',
-                            Icons.bolt,
-                            const Color(0xFF10B981),
-                            Colors.white,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => onTabChange('trade'),
+                            child: _buildCardButton(
+                              'Demo Mode',
+                              Icons.bolt,
+                              const Color(0xFF10B981).withOpacity(0.45),
+                              Colors.white,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () {},
-                          child: _buildCardButton(
-                            'AI Coach',
-                            Icons.smart_toy_outlined,
-                            Colors.white.withOpacity(0.2),
-                            Colors.white,
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: _buildCardButton(
+                              'AI Coach',
+                              Icons.smart_toy_outlined,
+                              const Color(0xFF8B5CF6).withOpacity(0.45),
+                              Colors.white,
+                            ),
                           ),
                         ),
                       ],
@@ -369,12 +460,14 @@ class MobileHome extends StatelessWidget {
 
   Widget _buildCardButton(String label, IconData icon, Color bg, Color fg) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(100),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: fg, size: 18),

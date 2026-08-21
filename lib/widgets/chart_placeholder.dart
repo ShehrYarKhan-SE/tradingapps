@@ -118,31 +118,35 @@ new TradingView.widget({
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xff0d1117),
-      child: Stack(
-        children: [
-          if (isReady)
-            Positioned.fill(
-              child: WebViewWidget(controller: controller),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              onPressed: openFullScreen,
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
-              tooltip: "Full screen",
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black45,
+    // Fill whatever space the parent (e.g. Expanded) gives this widget,
+    // instead of forcing a fixed height that ignores the real layout.
+    return SizedBox.expand(
+      child: Container(
+        color: const Color(0xff0d1117),
+        child: Stack(
+          children: [
+            if (isReady)
+              Positioned.fill(
+                child: WebViewWidget(controller: controller),
+              )
+            else
+              const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: openFullScreen,
+                icon: const Icon(Icons.fullscreen, color: Colors.white),
+                tooltip: "Full screen",
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black45,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

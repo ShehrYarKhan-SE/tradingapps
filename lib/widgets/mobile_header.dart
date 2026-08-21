@@ -4,6 +4,7 @@ import '../screens/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/profile_screen.dart';
 import '../screens/Notification_Screen.dart';
+import '../screens/menu_screens.dart';
 import 'mobile_settings.dart';
 
 class MobileHeader extends StatefulWidget {
@@ -57,7 +58,10 @@ class _MobileHeaderState extends State<MobileHeader> {
         'subtitle': '2FA & Password',
         'color': Colors.green,
         'onTap': () {
-          // TODO: navigate to your Security screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SecurityScreen()),
+          );
         },
       },
       {
@@ -66,7 +70,10 @@ class _MobileHeaderState extends State<MobileHeader> {
         'subtitle': 'Manage funds',
         'color': Colors.purple,
         'onTap': () {
-          // TODO: navigate to your Wallet screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const WalletScreen()),
+          );
         },
       },
       {
@@ -75,7 +82,10 @@ class _MobileHeaderState extends State<MobileHeader> {
         'subtitle': 'Claim bonuses',
         'color': Colors.orange,
         'onTap': () {
-          // TODO: navigate to your Rewards screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const RewardsScreen()),
+          );
         },
       },
       {
@@ -84,7 +94,10 @@ class _MobileHeaderState extends State<MobileHeader> {
         'subtitle': 'Pro Member',
         'color': Colors.yellow,
         'onTap': () {
-          // TODO: navigate to your VIP Status screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const VipStatusScreen()),
+          );
         },
       },
       {
@@ -116,7 +129,10 @@ class _MobileHeaderState extends State<MobileHeader> {
         'subtitle': 'Get support',
         'color': Colors.cyan,
         'onTap': () {
-          // TODO: navigate to your Help Center screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HelpCenterScreen()),
+          );
         },
       },
     ];

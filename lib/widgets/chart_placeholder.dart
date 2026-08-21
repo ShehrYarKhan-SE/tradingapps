@@ -11,7 +11,6 @@ class ChartScreen extends StatefulWidget {
 
 class _ChartScreenState extends State<ChartScreen> {
   late WebViewController controller;
-  double us100Price = 0;
   bool isReady = false;
 
   // Current selected interval (TradingView interval codes)
@@ -27,8 +26,6 @@ class _ChartScreenState extends State<ChartScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: (_) {
-            // Safety net: force the page to re-check its size in case the
-            // WebView's final bounds settled after the chart already loaded.
             Future.delayed(const Duration(milliseconds: 300), () {
               controller.runJavaScript(
                 "window.dispatchEvent(new Event('resize'));",
@@ -38,9 +35,6 @@ class _ChartScreenState extends State<ChartScreen> {
         ),
       );
 
-    // Wait until Flutter has finished laying out this widget at its real,
-    // final size before loading the chart, otherwise TradingView's
-    // autosize calculates against a too-small initial size.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       controller.loadHtmlString(buildHtml(selectedInterval));
@@ -55,17 +49,15 @@ class _ChartScreenState extends State<ChartScreen> {
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
-body, html {
-margin:0;
-padding:0;
-width:100%;
-height:100%;
-background:#0d1117;
-overflow:hidden;
+html, body {
+  margin:0;
+  padding:0;
+  background:#0d1117;
+  overflow:hidden;
 }
-.tradingview-widget-container {
-width:100%;
-height:100%;
+.tradingview-widget-container, #tv_chart {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
 }
 </style>
 </head>
@@ -77,6 +69,8 @@ height:100%;
 <script>
 new TradingView.widget({
   "autosize": true,
+  "width": "100%",
+  "height": "100%",
   "symbol": "CAPITALCOM:US100",
   "interval": "$interval",
   "timezone": "Etc/UTC",
@@ -86,6 +80,7 @@ new TradingView.widget({
   "toolbar_bg": "#0d1117",
   "enable_publishing": false,
   "hide_top_toolbar": false,
+  "hide_side_toolbar": false,
   "hide_legend": false,
   "save_image": false,
   "container_id": "tv_chart"
@@ -131,7 +126,7 @@ new TradingView.widget({
               child: CircularProgressIndicator(color: Colors.white),
             ),
           Positioned(
-            top: 8,
+            bottom: 16,
             right: 8,
             child: IconButton(
               onPressed: openFullScreen,
@@ -174,16 +169,12 @@ class _FullScreenChartScreenState extends State<FullScreenChartScreen> {
   }
 
   Future<void> _goFullScreen() async {
-    // Hide status bar / nav bar and rotate to landscape
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
 
-    // Wait for the orientation change / rebuild to actually complete before
-    // loading the chart, otherwise TradingView's autosize calculates using
-    // the old (portrait) screen size and the chart looks half-filled.
     await Future.delayed(const Duration(milliseconds: 350));
 
     if (!mounted) return;
@@ -198,17 +189,15 @@ class _FullScreenChartScreenState extends State<FullScreenChartScreen> {
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
-body, html {
-margin:0;
-padding:0;
-width:100%;
-height:100%;
-background:#0d1117;
-overflow:hidden;
+html, body {
+  margin:0;
+  padding:0;
+  background:#0d1117;
+  overflow:hidden;
 }
-.tradingview-widget-container {
-width:100%;
-height:100%;
+.tradingview-widget-container, #tv_chart {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
 }
 </style>
 </head>
@@ -220,6 +209,8 @@ height:100%;
 <script>
 new TradingView.widget({
   "autosize": true,
+  "width": "100%",
+  "height": "100%",
   "symbol": "CAPITALCOM:US100",
   "interval": "$interval",
   "timezone": "Etc/UTC",
@@ -229,6 +220,7 @@ new TradingView.widget({
   "toolbar_bg": "#0d1117",
   "enable_publishing": false,
   "hide_top_toolbar": true,
+  "hide_side_toolbar": false,
   "hide_legend": false,
   "save_image": false,
   "container_id": "tv_chart"
@@ -241,7 +233,6 @@ new TradingView.widget({
 
   @override
   void dispose() {
-    // Restore normal UI when leaving full screen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,

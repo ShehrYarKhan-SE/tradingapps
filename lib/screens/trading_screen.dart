@@ -33,13 +33,8 @@ class _TradingScreenState extends State<TradingScreen> {
       // Chart tab: full-screen chart, no buy/sell controls.
         return const ChartScreen();
       case 'trade':
-      // Trade tab: chart with quick buy/sell controls below it.
-        return Column(
-          children: [
-            Expanded(child: ChartScreen()),
-            const QuickTradeBar(),
-          ],
-        );
+      // Trade tab: sirf quick buy/sell bar, koi chart nahi.
+        return const QuickTradeBar();
       case 'portfolio':
         return const MobilePortfolio();
       case 'settings':

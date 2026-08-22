@@ -292,44 +292,9 @@ class MobileSettings extends StatelessWidget {
             ],
           ),
 
-          // ---------------- Logout ----------------
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-
-                if (context.mounted) {
-                  Navigator.pushReplacementNamed(context, '/login');
-                }
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.red.withOpacity(0.2)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.logout, color: Colors.red[400], size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Colors.red[400],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.chevron_right, color: Colors.red[300], size: 18),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          // NOTE: Bottom "Log Out" button intentionally removed from Settings.
+          // Logout is now only available from the Mobile Header menu and the
+          // Profile screen.
         ],
       ),
     );

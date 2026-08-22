@@ -1,12 +1,27 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/profile_screen.dart';
 
 class MobileHome extends StatelessWidget {
   final Function(String) onTabChange;
 
   const MobileHome({super.key, required this.onTabChange});
+
+  // Same key used by ProfileScreen when saving the picked profile picture,
+  // so both screens stay in sync.
+  static const String _profileImageKey = "profile_image_path";
+
+  Future<File?> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPath = prefs.getString(_profileImageKey);
+    if (savedPath != null && File(savedPath).existsSync()) {
+      return File(savedPath);
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +92,26 @@ class MobileHome extends StatelessWidget {
                           ),
                         ),
                         padding: const EdgeInsets.all(2),
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0xFF1A1A1F),
-                          ),
-                          child: Icon(Icons.person, color: Colors.grey[400], size: 17),
+                        child: FutureBuilder<File?>(
+                          future: _loadProfileImage(),
+                          builder: (context, snapshot) {
+                            final imageFile = snapshot.data;
+                            return Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF1A1A1F),
+                                image: imageFile != null
+                                    ? DecorationImage(
+                                  image: FileImage(imageFile),
+                                  fit: BoxFit.cover,
+                                )
+                                    : null,
+                              ),
+                              child: imageFile == null
+                                  ? Icon(Icons.person, color: Colors.grey[400], size: 17)
+                                  : null,
+                            );
+                          },
                         ),
                       ),
                       Positioned(

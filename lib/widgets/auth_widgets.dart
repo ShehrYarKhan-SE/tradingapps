@@ -3,6 +3,9 @@ import '../service/auth_service.dart';
 import '../screens/trading_screen.dart';
 
 /// Text field used inside the Login/Register cards.
+/// Uses a floating label (like Google's "New password" field): the label
+/// sits inside the field until you tap/type, then it floats up and breaks
+/// into the border line.
 class AuthInputField extends StatelessWidget {
   final String hint;
   final Widget? suffixIcon;
@@ -23,11 +26,14 @@ class AuthInputField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const borderRadius = 10.0;
+    final baseBorderColor = Colors.white.withOpacity(0.15);
+    const focusedColor = Color(0xFF2E9BFF);
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: TextFormField(
         controller: controller,
@@ -36,12 +42,37 @@ class AuthInputField extends StatelessWidget {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-          hintText: hint,
-          suffixIcon:suffixIcon,
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-          border: InputBorder.none,
+          // labelText (instead of hintText) is what gives the floating
+          // behaviour: it sits inline until focused/filled, then floats
+          // up into the border.
+          labelText: hint,
+          floatingLabelBehavior: FloatingLabelBehavior.auto,
+          suffixIcon: suffixIcon,
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          floatingLabelStyle: const TextStyle(color: focusedColor),
           errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          contentPadding:
+          const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(color: baseBorderColor),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: BorderSide(color: baseBorderColor),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(color: focusedColor, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(color: Colors.orangeAccent),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+            borderSide: const BorderSide(color: Colors.orangeAccent, width: 1.5),
+          ),
         ),
       ),
     );
@@ -223,4 +254,3 @@ class StreakPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

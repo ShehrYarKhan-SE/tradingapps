@@ -3,7 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:country_picker/country_picker.dart';
-import 'login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'registration_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -17,6 +18,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   final User? user = FirebaseAuth.instance.currentUser;
 
+  // Key used to persist the profile picture path locally so it survives
+  // navigating away/back and app restarts.
+  static const String _profileImageKey = "profile_image_path";
+
   // ---- Extra profile fields shown in the design (not part of FirebaseAuth,
   // so we keep them as local state you can later load/save from Firestore) ----
   String _username = "shehryar_khan";
@@ -27,6 +32,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _defaultCurrency = "USDT";
   final double _demoBalance = 100000.00;
   final String _plan = "Demo Pro Plan";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedProfileImage();
+  }
+
+  // Load the previously saved profile picture (if any) from local storage
+  // so it shows up again after leaving/returning to this screen or
+  // restarting the app.
+  Future<void> _loadSavedProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPath = prefs.getString(_profileImageKey);
+    if (savedPath != null && File(savedPath).existsSync()) {
+      setState(() {
+        _profileImage = File(savedPath);
+      });
+    }
+  }
 
   // ---------------- Country code (ISO2) -> Timezone label ----------------
   // Extend this map any time you need more countries. Fallback is handled
@@ -69,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     "US": "(GMT-5:00) Eastern Time",
     "CA": "(GMT-5:00) Eastern Time",
     "MX": "(GMT-6:00) Central Time",
-    "BR": "(GMT-3:00) BrasÃ­lia Time",
+    "BR": "(GMT-3:00) BrasÃƒÂ­lia Time",
     "AR": "(GMT-3:00) Argentina Time",
     "NG": "(GMT+1:00) West Africa Time",
     "KE": "(GMT+3:00) East Africa Time",
@@ -86,7 +110,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getTimezoneForCountry(String isoCode) {
     return _countryTimezones[isoCode.toUpperCase()] ??
-        "Timezone not set â€” please select manually";
+        "Timezone not set Ã¢â‚¬â€ please select manually";
+  }
+
+  // ---------------- Member since (from Firebase account creation date) ----------------
+  static const List<String> _monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
+  String _getMemberSinceText(User? currentUser) {
+    final creationTime = currentUser?.metadata.creationTime;
+    if (creationTime == null) return "Member since -";
+    final month = _monthNames[creationTime.month - 1];
+    return "Member since $month ${creationTime.year}";
   }
 
   // ---------------- Colors (dark theme like the screenshot) ----------------
@@ -103,6 +140,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
+      // Save the path locally so it persists across navigation and app
+      // restarts, then update the UI.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_profileImageKey, image.path);
+
       setState(() {
         _profileImage = File(image.path);
       });
@@ -343,10 +385,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       await FirebaseAuth.instance.signOut();
       if (mounted) {
-        // Go to Login screen and remove all previous routes from the stack.
-        // Replace `LoginScreen()` below with your actual login widget.
+        // Go to Registration screen and remove all previous routes from
+        // the stack, so the logged-out user lands back on registration
+        // instead of home.
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
               (route) => false,
         );
       }
@@ -380,8 +423,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (result == true) {
       await FirebaseAuth.instance.currentUser?.delete();
       if (mounted) {
+        // After the account is deleted there's nothing to "log in" to
+        // anymore, so send the user back to Registration rather than home.
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
               (route) => false,
         );
       }
@@ -602,12 +647,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 6),
                         Row(
-                          children: const [
-                            Icon(Icons.calendar_today, size: 12, color: textSecondary),
-                            SizedBox(width: 4),
+                          children: [
+                            const Icon(Icons.calendar_today, size: 12, color: textSecondary),
+                            const SizedBox(width: 4),
                             Text(
-                              "Member since May 2024",
-                              style: TextStyle(color: textSecondary, fontSize: 12),
+                              _getMemberSinceText(currentUser),
+                              style: const TextStyle(color: textSecondary, fontSize: 12),
                             ),
                           ],
                         ),
@@ -751,7 +796,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 12),
 
-            // Delete account â€” subtle, professional destructive action
+            // Delete account Ã¢â‚¬â€ subtle, professional destructive action
             Center(
               child: TextButton.icon(
                 onPressed: _deleteAccount,

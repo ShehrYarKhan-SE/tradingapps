@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service/auth_service.dart';
-import '../screens/login_screen.dart';
+import '../screens/registration_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/profile_screen.dart';
 import '../screens/Notification_Screen.dart';
@@ -279,10 +279,12 @@ class _MobileHeaderState extends State<MobileHeader> {
 
               if (!context.mounted) return;
 
+              // Logged-out users should land back on the Registration
+              // screen, not the home/trading screen.
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const LoginScreen(),
+                  builder: (_) => const RegistrationScreen(),
                 ),
                     (route) => false,
               );
@@ -294,7 +296,41 @@ class _MobileHeaderState extends State<MobileHeader> {
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
+          child: isLogout
+              ? Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFEF4444), Color(0xFFB91C1C)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFEF4444).withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.logout, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Log Out',
+                style: TextStyle(
+                  color: Color(0xFFF87171),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          )
+              : Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -322,8 +358,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                   children: [
                     Text(
                       label,
-                      style: TextStyle(
-                        color: isLogout ? Colors.red[400] : Colors.white,
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),

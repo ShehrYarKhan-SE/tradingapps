@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import '../service/demo_trade_service.dart';
 
 class MobilePortfolio extends StatefulWidget {
   const MobilePortfolio({super.key});
@@ -14,6 +15,34 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
 
   static const Color cardColor = Color(0xFF141824);
   static const Color borderColor = Color(0x1AFFFFFF);
+
+  @override
+  void initState() {
+    super.initState();
+    DemoTradeService.instance.init();
+    DemoTradeService.instance.addListener(_onDemo);
+  }
+
+  @override
+  void dispose() {
+    DemoTradeService.instance.removeListener(_onDemo);
+    super.dispose();
+  }
+
+  void _onDemo() {
+    if (mounted) setState(() {});
+  }
+
+  String _formatTradeTime(DateTime t) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
+    final m = t.minute.toString().padLeft(2, '0');
+    final ampm = t.hour >= 12 ? 'PM' : 'AM';
+    return '${months[t.month - 1]} ${t.day}, ${t.year} · $h:$m $ampm';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,14 +355,35 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _tradeItem('BTC/USDT', 'Long', 'May 29, 2024 · 10:35 AM',
-                    '+\$485.32', '+2.45%', true, const Color(0xFFF97316)),
-                const Divider(color: Colors.white10, height: 20),
-                _tradeItem('ETH/USDT', 'Short', 'May 29, 2024 · 09:15 AM',
-                    '-\$123.45', '-1.25%', false, const Color(0xFF6366F1)),
-                const Divider(color: Colors.white10, height: 20),
-                _tradeItem('SOL/USDT', 'Long', 'May 28, 2024 · 04:20 PM',
-                    '+\$256.78', '+2.12%', true, const Color(0xFF14B8A6)),
+                Builder(
+                  builder: (context) {
+                    final demo = DemoTradeService.instance;
+                    if (demo.trades.isEmpty) {
+                      return Text(
+                        'No practice trades yet. Open the Trade tab to buy or sell.',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      );
+                    }
+                    final rows = <Widget>[];
+                    final list = demo.trades.take(5).toList();
+                    for (var i = 0; i < list.length; i++) {
+                      final t = list[i];
+                      if (i > 0) {
+                        rows.add(const Divider(color: Colors.white10, height: 20));
+                      }
+                      rows.add(_tradeItem(
+                        t.symbol,
+                        t.side == 'BUY' ? 'Buy' : 'Sell',
+                        _formatTradeTime(t.closeTime),
+                        '${t.pnl >= 0 ? '+' : ''}\$${t.pnl.toStringAsFixed(2)}',
+                        '${t.lots.toStringAsFixed(2)} lot',
+                        t.pnl >= 0,
+                        t.side == 'BUY' ? const Color(0xFF1E88E5) : const Color(0xFFE53935),
+                      ));
+                    }
+                    return Column(children: rows);
+                  },
+                ),
               ],
             ),
           ),

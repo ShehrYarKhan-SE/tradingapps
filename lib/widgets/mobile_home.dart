@@ -7,8 +7,13 @@ import '../screens/profile_screen.dart';
 
 class MobileHome extends StatelessWidget {
   final Function(String) onTabChange;
+  final void Function(String symbol) onOpenChart;
 
-  const MobileHome({super.key, required this.onTabChange});
+  const MobileHome({
+    super.key,
+    required this.onTabChange,
+    required this.onOpenChart,
+  });
 
   // Same key used by ProfileScreen when saving the picked profile picture,
   // so both screens stay in sync.
@@ -41,18 +46,11 @@ class MobileHome extends StatelessWidget {
         'spark': [8.0, 7.0, 7.5, 6.0, 6.5, 5.0, 5.5, 4.0, 4.5],
       },
       {
-        'symbol': 'SOL/USDT',
-        'price': 98.45,
-        'change': 5.67,
-        'volume': '890M',
-        'spark': [3.0, 4.0, 3.5, 5.0, 6.0, 5.5, 7.5, 8.0, 9.0],
-      },
-      {
-        'symbol': 'DOGE/USDT',
-        'price': 0.0823,
-        'change': 8.45,
-        'volume': '456M',
-        'spark': [2.0, 3.0, 2.5, 4.5, 5.0, 6.5, 7.0, 8.5, 9.5],
+        'symbol': 'US100',
+        'price': 29295.54,
+        'change': 0.42,
+        'volume': 'NDX',
+        'spark': [5.0, 5.5, 5.2, 6.0, 6.4, 6.1, 7.0, 6.8, 7.4],
       },
     ];
 
@@ -275,7 +273,7 @@ class MobileHome extends StatelessWidget {
                             color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                       GestureDetector(
-                        onTap: () => onTabChange('chart'),
+                        onTap: () => onOpenChart('US100'),
                         child: Row(
                           children: [
                             Text('View All',
@@ -294,7 +292,7 @@ class MobileHome extends StatelessWidget {
                   pair['change'] as double,
                   pair['volume'] as String,
                   pair['spark'] as List<double>,
-                  onTabChange,
+                  () => onOpenChart(pair['symbol'] as String),
                 )),
               ],
             ),
@@ -542,22 +540,13 @@ class MobileHome extends StatelessWidget {
           ),
         );
         break;
-      case 'SOL':
+      case 'US100':
         gradient = const LinearGradient(
-          colors: [Color(0xFF9945FF), Color(0xFF14F195)],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
         );
         glyph = const Text(
-          "S",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-        );
-        break;
-      case 'DOGE':
-        gradient = const LinearGradient(
-          colors: [Color(0xFFC9A227), Color(0xFF8C6D1F)],
-        );
-        glyph = const Text(
-          "\u0110",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+          "100",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11),
         );
         break;
       default:
@@ -587,13 +576,14 @@ class MobileHome extends StatelessWidget {
       double change,
       String volume,
       List<double> spark,
-      Function(String) onTap,
+      VoidCallback onTap,
       ) {
     final isPositive = change >= 0;
     final color = isPositive ? Colors.green[400]! : Colors.red[400]!;
+    final isIndex = symbol == 'US100';
 
     return GestureDetector(
-      onTap: () => onTap('chart'),
+      onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.all(16),
@@ -612,7 +602,7 @@ class MobileHome extends StatelessWidget {
                 children: [
                   Text(symbol,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  Text('Vol: \$$volume', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  Text(isIndex ? 'Vol: $volume' : 'Vol: \$$volume', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                 ],
               ),
             ),

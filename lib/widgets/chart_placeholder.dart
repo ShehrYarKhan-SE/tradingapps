@@ -1,132 +1,177 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../service/chart_workspace.dart';
+
 class ChartScreen extends StatefulWidget {
-  const ChartScreen({super.key});
+  final bool visible;
+  final bool compact;
+  final String displaySymbol;
+
+  const ChartScreen({
+    super.key,
+    this.visible = true,
+    this.compact = false,
+    this.displaySymbol = ChartWorkspace.defaultDisplaySymbol,
+  });
 
   @override
   State<ChartScreen> createState() => _ChartScreenState();
 }
 
 class _ChartScreenState extends State<ChartScreen> {
-  late WebViewController controller;
-  bool isReady = false;
-  bool showSideToolbar = true;
+  WebViewController? _controller;
+  bool _ready = false;
+  bool _immersive = false;
+  bool _usedFallbackHtml = false;
+  String _loadedSymbol = '';
+  bool _loadedFullTools = true;
 
-  // Current selected interval (TradingView interval codes)
-  String selectedInterval = "1";
+  bool get _fullTools => !widget.compact;
 
   @override
   void initState() {
     super.initState();
-
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000))
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: (_) {
-            Future.delayed(const Duration(milliseconds: 300), () {
-              controller.runJavaScript(
-                "window.dispatchEvent(new Event('resize'));",
-              );
-            });
-          },
-        ),
-      );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      controller.loadHtmlString(buildHtml(selectedInterval));
-      setState(() => isReady = true);
-    });
+    _open(widget.displaySymbol, true);
   }
 
-  String buildHtml(String interval) {
+  @override
+  void didUpdateWidget(ChartScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final toolsChanged = oldWidget.compact != widget.compact;
+    final symbolChanged = oldWidget.displaySymbol != widget.displaySymbol;
+    if (symbolChanged) {
+      _open(widget.displaySymbol, true, force: true);
+    } else if ((widget.visible && !oldWidget.visible) || toolsChanged) {
+      _resize();
+    }
+  }
+
+  Future<void> _open(String displaySymbol, bool fullTools,
+      {bool force = false}) async {
+    if (!force &&
+        _loadedSymbol == displaySymbol &&
+        _loadedFullTools == fullTools &&
+        _controller != null) {
+      return;
+    }
+    _usedFallbackHtml = false;
+    final interval = await ChartWorkspace.loadInterval();
+    await ChartWorkspace.saveSymbol(displaySymbol);
+
+    if (_controller == null) {
+      final controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setBackgroundColor(const Color(0xFF0D1117))
+        ..setUserAgent(
+          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        )
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onPageFinished: (_) => _resize(),
+            onWebResourceError: (error) {
+              if (_usedFallbackHtml) return;
+              _usedFallbackHtml = true;
+              _controller?.loadHtmlString(
+                _fallbackHtml(displaySymbol, interval, fullTools),
+              );
+            },
+          ),
+        );
+      _controller = controller;
+    }
+
+    _loadedSymbol = displaySymbol;
+    _loadedFullTools = fullTools;
+    await _controller!.loadRequest(
+      ChartWorkspace.embedUri(
+        displaySymbol: displaySymbol,
+        interval: interval,
+        fullTools: fullTools,
+      ),
+    );
+    if (mounted) setState(() => _ready = true);
+  }
+
+  void _resize() {
+    _controller?.runJavaScript(
+      "window.dispatchEvent(new Event('resize'));",
+    );
+  }
+
+  Future<void> _toggleImmersive() async {
+    final next = !_immersive;
+    if (next) {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    } else {
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+    if (mounted) {
+      setState(() => _immersive = next);
+      Future.delayed(const Duration(milliseconds: 350), _resize);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_immersive) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+    super.dispose();
+  }
+
+  String _fallbackHtml(String display, String interval, bool fullTools) {
+    final uri = ChartWorkspace.embedUri(
+      displaySymbol: display,
+      interval: interval,
+      fullTools: fullTools,
+    ).toString();
     return """
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
-html, body {
-  margin:0;
-  padding:0;
-  background:#0d1117;
-  overflow:hidden;
-}
-.tradingview-widget-container, #tv_chart {
-  position:fixed;
-  top:0; left:0; right:0; bottom:0;
-}
+html, body, iframe { margin:0; padding:0; height:100%; width:100%; background:#0d1117; border:0; }
+iframe { position:fixed; inset:0; }
 </style>
 </head>
 <body>
-<div class="tradingview-widget-container">
-  <div id="tv_chart"></div>
-</div>
-<script src="https://s3.tradingview.com/tv.js"></script>
-<script>
-new TradingView.widget({
-  "autosize": true,
-  "width": "100%",
-  "height": "100%",
-  "symbol": "CAPITALCOM:US100",
-  "interval": "$interval",
-  "timezone": "Etc/UTC",
-  "theme": "dark",
-  "style": "1",
-  "locale": "en",
-  "toolbar_bg": "#0d1117",
-  "enable_publishing": false,
-  "hide_top_toolbar": false,
-  "hide_side_toolbar": ${!showSideToolbar},
-  "hide_legend": false,
-  "save_image": false,
-  "container_id": "tv_chart"
-});
-</script>
+<iframe id="${ChartWorkspace.frameIdOf(display)}" src="$uri" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
 </body>
 </html>
 """;
   }
 
-  void initChart(String interval) {
-    controller.loadHtmlString(buildHtml(interval));
-  }
-
-  void changeInterval(String value) {
-    if (value == selectedInterval) return;
-    setState(() {
-      selectedInterval = value;
-      initChart(value);
-    });
-  }
-
-  void openFullScreen() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FullScreenChartScreen(interval: selectedInterval),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final controller = _controller;
     return Container(
       color: const Color(0xff0d1117),
       child: Stack(
         children: [
-          if (isReady)
+          if (_ready && controller != null)
             Positioned.fill(
               child: WebViewWidget(
                 controller: controller,
                 gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                   Factory<OneSequenceGestureRecognizer>(
-                        () => EagerGestureRecognizer(),
+                    () => EagerGestureRecognizer(),
                   ),
                 },
               ),
@@ -135,173 +180,16 @@ new TradingView.widget({
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
-          Positioned(
-            top: 0,
-            bottom: 0,
-            left: showSideToolbar ? 40 : 0,
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    showSideToolbar = !showSideToolbar;
-                    controller.loadHtmlString(buildHtml(selectedInterval));
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: const BorderRadius.horizontal(
-                      right: Radius.circular(6),
-                    ),
-                  ),
-                  child: Icon(
-                    showSideToolbar
-                        ? Icons.chevron_left
-                        : Icons.chevron_right,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
           Positioned(
             bottom: 16,
             right: 8,
             child: IconButton(
-              onPressed: openFullScreen,
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
-              tooltip: "Full screen",
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black45,
+              onPressed: _toggleImmersive,
+              icon: Icon(
+                _immersive ? Icons.fullscreen_exit : Icons.fullscreen,
+                color: Colors.white,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class FullScreenChartScreen extends StatefulWidget {
-  final String interval;
-
-  const FullScreenChartScreen({super.key, required this.interval});
-
-  @override
-  State<FullScreenChartScreen> createState() =>
-      _FullScreenChartScreenState();
-}
-
-class _FullScreenChartScreenState extends State<FullScreenChartScreen> {
-  late WebViewController controller;
-  bool isReady = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000));
-
-    _goFullScreen();
-  }
-
-  Future<void> _goFullScreen() async {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-
-    await Future.delayed(const Duration(milliseconds: 350));
-
-    if (!mounted) return;
-    controller.loadHtmlString(_buildHtml(widget.interval));
-    setState(() => isReady = true);
-  }
-
-  String _buildHtml(String interval) {
-    return """
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<style>
-html, body {
-  margin:0;
-  padding:0;
-  background:#0d1117;
-  overflow:hidden;
-}
-.tradingview-widget-container, #tv_chart {
-  position:fixed;
-  top:0; left:0; right:0; bottom:0;
-}
-</style>
-</head>
-<body>
-<div class="tradingview-widget-container">
-  <div id="tv_chart"></div>
-</div>
-<script src="https://s3.tradingview.com/tv.js"></script>
-<script>
-new TradingView.widget({
-  "autosize": true,
-  "width": "100%",
-  "height": "100%",
-  "symbol": "CAPITALCOM:US100",
-  "interval": "$interval",
-  "timezone": "Etc/UTC",
-  "theme": "dark",
-  "style": "1",
-  "locale": "en",
-  "toolbar_bg": "#0d1117",
-  "enable_publishing": false,
-  "hide_top_toolbar": true,
-  "hide_side_toolbar": false,
-  "hide_legend": false,
-  "save_image": false,
-  "container_id": "tv_chart"
-});
-</script>
-</body>
-</html>
-""";
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xff0d1117),
-      body: Stack(
-        children: [
-          if (isReady)
-            Positioned.fill(
-              child: WebViewWidget(controller: controller),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: Colors.white),
+              tooltip: "Full screen",
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black45,
               ),

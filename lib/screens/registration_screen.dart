@@ -4,7 +4,9 @@ import '../service/auth_service.dart';
 import '../widgets/auth_widgets.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+  const RegistrationScreen({super.key, this.onSwitchToLogin});
+
+  final VoidCallback? onSwitchToLogin;
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -47,12 +49,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (result.success) {
-      if (!mounted) return;
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } else {
+    if (!result.success) {
       _showMessage(result.message);
     }
   }
@@ -153,6 +150,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           Text('Already have an account?', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
                           GestureDetector(
                             onTap: () {
+                              if (widget.onSwitchToLogin != null) {
+                                widget.onSwitchToLogin!();
+                                return;
+                              }
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(builder: (_) => const LoginScreen()),
                               );

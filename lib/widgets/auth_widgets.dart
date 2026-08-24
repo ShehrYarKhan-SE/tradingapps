@@ -137,11 +137,7 @@ class SocialRow extends StatelessWidget {
             // Facebook
             GestureDetector(
               onTap: () async {
-                final user = await AuthService.facebookLogin();
-
-                if (user != null && context.mounted) {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                }
+                await AuthService.facebookLogin();
               },
               child: const SocialCircle(
                 color: Color(0xFF1877F2),
@@ -154,12 +150,7 @@ class SocialRow extends StatelessWidget {
             // Google
             GestureDetector(
               onTap: () async {
-                print("Google button pressed");
-                final user = await AuthService.googleLogin();
-
-                if (user != null && context.mounted) {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                }
+                await AuthService.googleLogin();
               },
               child: const SocialCircle(
                 color: Colors.white,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'trading_screen.dart';
 import 'login_screen.dart';
 import '../service/auth_service.dart';
 import '../widgets/auth_widgets.dart';
@@ -56,12 +55,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const TradingScreen(),
-        ),
-      );
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
 
     } else {
       _showMessage(result.message);

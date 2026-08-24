@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../service/auth_service.dart';
-import '../screens/registration_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/profile_screen.dart';
 import '../screens/Notification_Screen.dart';
@@ -279,15 +278,7 @@ class _MobileHeaderState extends State<MobileHeader> {
 
               if (!context.mounted) return;
 
-              // Logged-out users should land back on the Registration
-              // screen, not the home/trading screen.
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const RegistrationScreen(),
-                ),
-                    (route) => false,
-              );
+              Navigator.of(context).popUntil((route) => route.isFirst);
             }
           } else {
             onTap();

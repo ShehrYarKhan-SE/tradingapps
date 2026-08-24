@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../service/demo_trade_service.dart';
+import '../service/user_account_store.dart';
+
 // ===========================================================
 // All secondary menu screens combined into ONE file:
 // Security, Wallet, Rewards, VIP Status, Help Center.
@@ -14,9 +17,9 @@ class SecurityScreen extends StatefulWidget {
 }
 
 class _SecurityScreenState extends State<SecurityScreen> {
-  bool _twoFAEnabled = false;
-  bool _biometricEnabled = true;
-  bool _loginAlerts = true;
+  bool _twoFAEnabled = UserAccountStore.instance.twoFAEnabled;
+  bool _biometricEnabled = UserAccountStore.instance.biometricEnabled;
+  bool _loginAlerts = UserAccountStore.instance.loginAlerts;
 
   static const _bg = Color(0xFF0D0D0F);
   static const _card = Color(0xFF1A1A1F);
@@ -208,7 +211,11 @@ class _SecurityScreenState extends State<SecurityScreen> {
             title: 'Two-Factor Authentication',
             subtitle: _twoFAEnabled ? 'Enabled — your account is protected' : 'Add an extra layer of security',
             value: _twoFAEnabled,
-            onChanged: (v) => setState(() => _twoFAEnabled = v),
+            onChanged: (v) {
+              setState(() => _twoFAEnabled = v);
+              UserAccountStore.instance.twoFAEnabled = v;
+              UserAccountStore.instance.saveAll();
+            },
           ),
           _switchTile(
             icon: Icons.fingerprint,
@@ -216,7 +223,11 @@ class _SecurityScreenState extends State<SecurityScreen> {
             title: 'Biometric Login',
             subtitle: 'Use fingerprint / face unlock',
             value: _biometricEnabled,
-            onChanged: (v) => setState(() => _biometricEnabled = v),
+            onChanged: (v) {
+              setState(() => _biometricEnabled = v);
+              UserAccountStore.instance.biometricEnabled = v;
+              UserAccountStore.instance.saveAll();
+            },
           ),
           _switchTile(
             icon: Icons.notifications_active,
@@ -224,7 +235,11 @@ class _SecurityScreenState extends State<SecurityScreen> {
             title: 'New Login Alerts',
             subtitle: 'Get notified on unrecognized sign-ins',
             value: _loginAlerts,
-            onChanged: (v) => setState(() => _loginAlerts = v),
+            onChanged: (v) {
+              setState(() => _loginAlerts = v);
+              UserAccountStore.instance.loginAlerts = v;
+              UserAccountStore.instance.saveAll();
+            },
           ),
           _sectionTitle('PASSWORD'),
           _actionTile(
@@ -249,7 +264,28 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
-  double _balance = 12480.35;
+  final _demo = DemoTradeService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _demo.init();
+    _demo.addListener(_onDemo);
+    UserAccountStore.instance.addListener(_onDemo);
+  }
+
+  @override
+  void dispose() {
+    _demo.removeListener(_onDemo);
+    UserAccountStore.instance.removeListener(_onDemo);
+    super.dispose();
+  }
+
+  void _onDemo() {
+    if (mounted) setState(() {});
+  }
+
+  double get _balance => _demo.balance;
 
   static const _bg = Color(0xFF0D0D0F);
   static const _card = Color(0xFF1A1A1F);
@@ -301,10 +337,18 @@ class _WalletScreenState extends State<WalletScreen> {
                   onPressed: () {
                     final amount = double.tryParse(ctrl.text) ?? 0;
                     if (amount <= 0) return;
-                    setState(() => _balance += isDeposit ? amount : -amount);
+                    final error = _demo.adjustBalance(
+                      isDeposit ? amount : -amount,
+                      label: isDeposit ? 'Deposit' : 'Withdrawal',
+                    );
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${isDeposit ? 'Deposited' : 'Withdrew'} \$${amount.toStringAsFixed(2)}')),
+                      SnackBar(
+                        content: Text(
+                          error ??
+                              '${isDeposit ? 'Deposited' : 'Withdrew'} \$${amount.toStringAsFixed(2)}',
+                        ),
+                      ),
                     );
                   },
                   child: Text(isDeposit ? 'Deposit' : 'Withdraw', style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -347,6 +391,32 @@ class _WalletScreenState extends State<WalletScreen> {
         ],
       ),
     );
+  }
+
+  List<Widget> _walletHistory() {
+    final activity = UserAccountStore.instance.walletActivity;
+    if (activity.isEmpty) {
+      return [
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'No wallet activity yet',
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          ),
+        ),
+      ];
+    }
+    return activity
+        .take(20)
+        .map(
+          (a) => _historyTile(
+            a.label,
+            a.amount.toStringAsFixed(2),
+            a.isPositive,
+            a.isPositive ? Icons.arrow_downward : Icons.arrow_upward,
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -420,9 +490,7 @@ class _WalletScreenState extends State<WalletScreen> {
             child: Text('RECENT ACTIVITY',
                 style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w600)),
           ),
-          _historyTile('Deposit', '2,500.00', true, Icons.arrow_downward),
-          _historyTile('Withdrawal', '400.00', false, Icons.arrow_upward),
-          _historyTile('Deposit', '1,000.00', true, Icons.arrow_downward),
+          ..._walletHistory(),
         ],
       ),
     );

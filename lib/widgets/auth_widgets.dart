@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../service/auth_service.dart';
-import '../screens/trading_screen.dart';
 
 /// Text field used inside the Login/Register cards.
 /// Uses a floating label (like Google's "New password" field): the label
@@ -141,12 +140,7 @@ class SocialRow extends StatelessWidget {
                 final user = await AuthService.facebookLogin();
 
                 if (user != null && context.mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TradingScreen(),
-                    ),
-                  );
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               },
               child: const SocialCircle(
@@ -164,12 +158,7 @@ class SocialRow extends StatelessWidget {
                 final user = await AuthService.googleLogin();
 
                 if (user != null && context.mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const TradingScreen(),
-                    ),
-                  );
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 }
               },
               child: const SocialCircle(

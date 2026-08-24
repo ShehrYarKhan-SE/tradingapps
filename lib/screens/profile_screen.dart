@@ -3,8 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:country_picker/country_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'registration_screen.dart';
+import '../service/auth_service.dart';
+import '../service/demo_trade_service.dart';
+import '../service/user_account_store.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,20 +19,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final ImagePicker _picker = ImagePicker();
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // Key used to persist the profile picture path locally so it survives
-  // navigating away/back and app restarts.
-  static const String _profileImageKey = "profile_image_path";
+  UserAccountStore get _store => UserAccountStore.instance;
 
-  // ---- Extra profile fields shown in the design (not part of FirebaseAuth,
-  // so we keep them as local state you can later load/save from Firestore) ----
-  String _username = "shehryar_khan";
-  String _country = "Pakistan";
-  String _timezone = "(GMT+5) Pakistan Time";
-  String _defaultMarket = "BTC/USDT";
-  String _defaultOrderType = "Market";
-  String _defaultCurrency = "USDT";
-  final double _demoBalance = 100000.00;
-  final String _plan = "Demo Pro Plan";
+  String get _username => _store.username;
+  set _username(String v) => _store.username = v;
+  String get _country => _store.country;
+  set _country(String v) => _store.country = v;
+  String get _timezone => _store.timezone;
+  set _timezone(String v) => _store.timezone = v;
+  String get _defaultMarket => _store.defaultMarket;
+  set _defaultMarket(String v) => _store.defaultMarket = v;
+  String get _defaultOrderType => _store.defaultOrderType;
+  set _defaultOrderType(String v) => _store.defaultOrderType = v;
+  String get _defaultCurrency => _store.defaultCurrency;
+  set _defaultCurrency(String v) => _store.defaultCurrency = v;
+  String get _plan => _store.plan;
 
   @override
   void initState() {
@@ -39,12 +41,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadSavedProfileImage();
   }
 
-  // Load the previously saved profile picture (if any) from local storage
-  // so it shows up again after leaving/returning to this screen or
-  // restarting the app.
+  Future<void> _persistProfile() => _store.saveAll();
+
   Future<void> _loadSavedProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPath = prefs.getString(_profileImageKey);
+    final savedPath = await _store.loadProfileImagePath();
     if (savedPath != null && File(savedPath).existsSync()) {
       setState(() {
         _profileImage = File(savedPath);
@@ -142,8 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (image != null) {
       // Save the path locally so it persists across navigation and app
       // restarts, then update the UI.
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_profileImageKey, image.path);
+      await _store.setProfileImagePath(image.path);
 
       setState(() {
         _profileImage = File(image.path);
@@ -179,6 +178,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () async {
                 await user?.updateDisplayName(controller.text);
                 await user?.reload();
+                UserAccountStore.instance.displayName = controller.text.trim();
+                await UserAccountStore.instance.saveAll();
                 setState(() {});
                 if (context.mounted) Navigator.pop(context);
               },
@@ -383,15 +384,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (result == true) {
-      await FirebaseAuth.instance.signOut();
+      await AuthService.logout();
       if (mounted) {
-        // Go to Registration screen and remove all previous routes from
-        // the stack, so the logged-out user lands back on registration
-        // instead of home.
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
-              (route) => false,
-        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
   }
@@ -421,14 +416,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     if (result == true) {
-      await FirebaseAuth.instance.currentUser?.delete();
+      try {
+        await AuthService.deleteAccount();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Could not delete account: $e")),
+          );
+        }
+        return;
+      }
       if (mounted) {
-        // After the account is deleted there's nothing to "log in" to
-        // anymore, so send the user back to Registration rather than home.
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
-              (route) => false,
-        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
   }
@@ -455,10 +454,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               onSaved(controller.text);
+              await _persistProfile();
               setState(() {});
-              Navigator.pop(context);
+              if (context.mounted) Navigator.pop(context);
             },
             child: const Text("Save"),
           ),
@@ -488,12 +488,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-      onSelect: (Country country) {
+      onSelect: (Country country) async {
         setState(() {
-          // country.name = full country name, country.flagEmoji = flag emoji
           _country = "${country.flagEmoji}  ${country.name}";
           _timezone = _getTimezoneForCountry(country.countryCode);
         });
+        await _persistProfile();
       },
     );
   }
@@ -768,7 +768,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: "Demo Balance",
                 value: "",
                 trailing: Text(
-                  "\$${_demoBalance.toStringAsFixed(2)}",
+                  "\$${DemoTradeService.instance.balance.toStringAsFixed(2)}",
                   style: const TextStyle(
                     color: accentGreen,
                     fontWeight: FontWeight.w600,

@@ -1,10 +1,8 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'user_account_store.dart';
 
 class ChartWorkspace {
   static const defaultDisplaySymbol = 'US100';
   static const defaultInterval = '15';
-  static const _intervalKey = 'tv_chart_interval';
-  static const _symbolKey = 'tv_chart_display_symbol';
 
   static const displaySymbols = ['BTC/USDT', 'ETH/USDT', 'US100'];
 
@@ -21,25 +19,24 @@ class ChartWorkspace {
       'trademaster_${tvSymbolOf(display).replaceAll(':', '_')}';
 
   static Future<String> loadInterval() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_intervalKey) ?? defaultInterval;
+    final saved = UserAccountStore.instance.chartInterval;
+    return saved.isEmpty ? defaultInterval : saved;
   }
 
   static Future<void> saveInterval(String interval) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_intervalKey, interval);
+    UserAccountStore.instance.chartInterval = interval;
+    await UserAccountStore.instance.saveAll();
   }
 
   static Future<String> loadSymbol() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString(_symbolKey);
-    if (saved != null && tvSymbols.containsKey(saved)) return saved;
+    final saved = UserAccountStore.instance.chartSymbol;
+    if (tvSymbols.containsKey(saved)) return saved;
     return defaultDisplaySymbol;
   }
 
   static Future<void> saveSymbol(String display) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_symbolKey, display);
+    UserAccountStore.instance.chartSymbol = display;
+    await UserAccountStore.instance.saveAll();
   }
 
   /// Chart tab: full TradingView drawing + indicator toolbars.

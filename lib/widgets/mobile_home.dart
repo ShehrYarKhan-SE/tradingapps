@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/profile_screen.dart';
+import '../service/user_account_store.dart';
 
 class MobileHome extends StatelessWidget {
   final Function(String) onTabChange;
@@ -15,13 +15,8 @@ class MobileHome extends StatelessWidget {
     required this.onOpenChart,
   });
 
-  // Same key used by ProfileScreen when saving the picked profile picture,
-  // so both screens stay in sync.
-  static const String _profileImageKey = "profile_image_path";
-
   Future<File?> _loadProfileImage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedPath = prefs.getString(_profileImageKey);
+    final savedPath = await UserAccountStore.instance.loadProfileImagePath();
     if (savedPath != null && File(savedPath).existsSync()) {
       return File(savedPath);
     }

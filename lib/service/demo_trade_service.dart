@@ -1,7 +1,7 @@
-import 'dart:convert';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import 'user_account_store.dart';
 
 class DemoPosition {
   final String id;
@@ -97,16 +97,16 @@ class DemoTrade {
       );
 }
 
-/// Paper US100 account. Orders are local only and persisted on device.
+/// Paper US100 account. Orders are stored per signed-in user.
 class DemoTradeService extends ChangeNotifier {
   DemoTradeService._();
   static final DemoTradeService instance = DemoTradeService._();
 
   static const double startingBalance = 10000;
   static const String symbol = 'US100';
-  static const _prefsKey = 'demo_us100_mt5_v1';
 
   bool _ready = false;
+  String? _boundUid;
   double balance = startingBalance;
   final List<DemoPosition> positions = [];
   final List<DemoTrade> trades = [];
@@ -114,29 +114,73 @@ class DemoTradeService extends ChangeNotifier {
   bool get isReady => _ready;
 
   Future<void> init() async {
-    if (_ready) return;
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_prefsKey);
-    if (raw != null) {
-      try {
-        final map = jsonDecode(raw) as Map<String, dynamic>;
-        balance = (map['balance'] as num?)?.toDouble() ?? startingBalance;
-        positions
-          ..clear()
-          ..addAll(((map['positions'] as List?) ?? []).map(
-            (e) => DemoPosition.fromJson(e as Map<String, dynamic>),
-          ));
-        trades
-          ..clear()
-          ..addAll(((map['trades'] as List?) ?? []).map(
-            (e) => DemoTrade.fromJson(e as Map<String, dynamic>),
-          ));
-      } catch (_) {
-        balance = startingBalance;
-      }
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      resetMemory();
+      return;
+    }
+    if (_ready && _boundUid == uid) return;
+    _boundUid = uid;
+
+    final store = UserAccountStore.instance;
+    if (!store.isBound || store.uid != uid) {
+      await store.bindToCurrentUser();
+    }
+
+    try {
+      final map = await store.demoPayload();
+      balance = (map['balance'] as num?)?.toDouble() ?? startingBalance;
+      positions
+        ..clear()
+        ..addAll(((map['positions'] as List?) ?? []).map(
+          (e) => DemoPosition.fromJson(Map<String, dynamic>.from(e as Map)),
+        ));
+      trades
+        ..clear()
+        ..addAll(((map['trades'] as List?) ?? []).map(
+          (e) => DemoTrade.fromJson(Map<String, dynamic>.from(e as Map)),
+        ));
+    } catch (_) {
+      balance = startingBalance;
+      positions.clear();
+      trades.clear();
     }
     _ready = true;
     notifyListeners();
+  }
+
+  void resetMemory() {
+    _ready = false;
+    _boundUid = null;
+    balance = startingBalance;
+    positions.clear();
+    trades.clear();
+    notifyListeners();
+  }
+
+  Future<void> flushAndReset() async {
+    if (_ready && _boundUid != null) {
+      await _persist();
+    }
+    resetMemory();
+  }
+
+  String? adjustBalance(double delta, {required String label}) {
+    if (delta == 0) return 'Enter an amount';
+    final next = balance + delta;
+    if (next < 0) return 'Not enough balance';
+    balance = next;
+    UserAccountStore.instance.addWalletActivity(
+      WalletActivity(
+        label: label,
+        amount: delta.abs(),
+        isPositive: delta > 0,
+        time: DateTime.now(),
+      ),
+    );
+    _persist();
+    notifyListeners();
+    return null;
   }
 
   String? openMarket({
@@ -195,14 +239,10 @@ class DemoTradeService extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _prefsKey,
-      jsonEncode({
-        'balance': balance,
-        'positions': positions.map((p) => p.toJson()).toList(),
-        'trades': trades.map((t) => t.toJson()).toList(),
-      }),
+    await UserAccountStore.instance.saveAll(
+      demoBalance: balance,
+      positions: positions.map((p) => p.toJson()).toList(),
+      trades: trades.map((t) => t.toJson()).toList(),
     );
   }
 }

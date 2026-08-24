@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tradingapps/theme_controller.dart';
-import '../main.dart';
-// ProfileScreen lives in lib/screens/, this file is in lib/widgets/
 import '../screens/profile_screen.dart';
+import '../service/user_account_store.dart';
 
 class MobileSettings extends StatelessWidget {
   const MobileSettings({super.key});
@@ -467,6 +466,8 @@ class MobileSettings extends StatelessWidget {
                                 value: darkMode,
                                 onChanged: (value) {
                                   isDarkMode.value = value;
+                                  UserAccountStore.instance.darkMode = value;
+                                  UserAccountStore.instance.saveAll();
                                 },
                                 activeColor: const Color(0xFF8B5CF6),
                               );

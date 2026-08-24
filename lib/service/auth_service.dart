@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+
+import 'demo_trade_service.dart';
+import 'user_account_store.dart';
 class AuthResult {
   final bool success;
   final String message;
@@ -31,8 +34,11 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      return await FirebaseAuth.instance
+      final cred = await FirebaseAuth.instance
           .signInWithCredential(credential);
+      await UserAccountStore.instance.bindToCurrentUser();
+      await DemoTradeService.instance.init();
+      return cred;
 
     } catch (e) {
       print("Google Login Error: $e");
@@ -52,8 +58,11 @@ class AuthService {
         result.accessToken!.tokenString,
       );
 
-      return await FirebaseAuth.instance
+      final cred = await FirebaseAuth.instance
           .signInWithCredential(credential);
+      await UserAccountStore.instance.bindToCurrentUser();
+      await DemoTradeService.instance.init();
+      return cred;
     } catch (e) {
       print("Facebook Login Error: $e");
       return null;
@@ -75,6 +84,11 @@ class AuthService {
       );
 
       await result.user!.updateDisplayName(username);
+      await UserAccountStore.instance.bindToCurrentUser();
+      UserAccountStore.instance.username = username.trim();
+      UserAccountStore.instance.displayName = username.trim();
+      await UserAccountStore.instance.saveAll();
+      await DemoTradeService.instance.init();
 
       return AuthResult(
         success: true,
@@ -101,6 +115,9 @@ class AuthService {
         password: password,
       );
 
+      await UserAccountStore.instance.bindToCurrentUser();
+      await DemoTradeService.instance.init();
+
       return AuthResult(
         success: true,
         message: "Login Successful",
@@ -116,6 +133,21 @@ class AuthService {
 
   // Logout
   static Future<void> logout() async {
+    await DemoTradeService.instance.flushAndReset();
+    UserAccountStore.instance.resetMemory();
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {}
+    try {
+      await FacebookAuth.instance.logOut();
+    } catch (_) {}
     await _auth.signOut();
+  }
+
+  static Future<void> deleteAccount() async {
+    await UserAccountStore.instance.deleteCloudData();
+    DemoTradeService.instance.resetMemory();
+    UserAccountStore.instance.resetMemory();
+    await FirebaseAuth.instance.currentUser?.delete();
   }
 }

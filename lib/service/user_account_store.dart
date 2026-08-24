@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -83,9 +84,45 @@ class UserAccountStore extends ChangeNotifier {
     uid = user.uid;
     email = user.email ?? '';
     displayName = user.displayName ?? '';
-    await _load();
+    await _loadLocalFast();
     isDarkMode.value = darkMode;
     notifyListeners();
+    unawaited(_syncCloudInBackground());
+  }
+
+  Future<void> _loadLocalFast() async {
+    var data = await _readLocalCache();
+    data ??= await _maybeMigrateLegacy();
+    if (data == null) {
+      username = displayName.isNotEmpty
+          ? displayName.toLowerCase().replaceAll(' ', '_')
+          : (email.contains('@') ? email.split('@').first : 'user');
+      return;
+    }
+    _applyMap(data);
+    if (username.isEmpty) {
+      username = displayName.isNotEmpty
+          ? displayName.toLowerCase().replaceAll(' ', '_')
+          : (email.contains('@') ? email.split('@').first : 'user');
+    }
+  }
+
+  Future<void> _syncCloudInBackground() async {
+    try {
+      final snap = await _doc?.get().timeout(const Duration(seconds: 3));
+      if (snap != null && snap.exists) {
+        final data = snap.data();
+        if (data != null) {
+          _applyMap(data);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_cacheKey, jsonEncode(data));
+          isDarkMode.value = darkMode;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint('Firestore sync skipped: $e');
+    }
   }
 
   void resetMemory() {
@@ -110,38 +147,6 @@ class UserAccountStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _load() async {
-    Map<String, dynamic>? data;
-
-    try {
-      final snap = await _doc?.get();
-      if (snap != null && snap.exists) {
-        data = snap.data();
-      }
-    } catch (e) {
-      debugPrint('Firestore load failed, using local cache: $e');
-    }
-
-    data ??= await _readLocalCache();
-    data ??= await _maybeMigrateLegacy();
-
-    if (data == null) {
-      username = displayName.isNotEmpty
-          ? displayName.toLowerCase().replaceAll(' ', '_')
-          : (email.split('@').first);
-      await saveAll();
-      return;
-    }
-
-    _applyMap(data);
-    if (username.isEmpty) {
-      username = displayName.isNotEmpty
-          ? displayName.toLowerCase().replaceAll(' ', '_')
-          : (email.split('@').first);
-    }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_cacheKey, jsonEncode(data));
-  }
 
   void _applyMap(Map<String, dynamic> data) {
     username = data['username'] as String? ?? username;
@@ -252,27 +257,20 @@ class UserAccountStore extends ChangeNotifier {
       await prefs.setString(_imageKey, profileImagePath!);
     }
 
-    try {
-      await _doc?.set(data, SetOptions(merge: true));
-    } catch (e) {
-      debugPrint('Firestore save failed (data kept on this device): $e');
-    }
+    unawaited(() async {
+      try {
+        await _doc?.set(data, SetOptions(merge: true)).timeout(
+              const Duration(seconds: 4),
+            );
+      } catch (e) {
+        debugPrint('Firestore save failed (data kept on this device): $e');
+      }
+    }());
     notifyListeners();
   }
 
   Future<Map<String, dynamic>> demoPayload() async {
     final cached = await _readLocalCache() ?? {};
-    try {
-      final snap = await _doc?.get();
-      if (snap != null && snap.exists) {
-        final cloud = snap.data() ?? {};
-        return {
-          'balance': cloud['demoBalance'] ?? cached['demoBalance'],
-          'positions': cloud['positions'] ?? cached['positions'],
-          'trades': cloud['trades'] ?? cached['trades'],
-        };
-      }
-    } catch (_) {}
     return {
       'balance': cached['demoBalance'],
       'positions': cached['positions'],

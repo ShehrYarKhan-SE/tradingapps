@@ -30,7 +30,7 @@ class Us100QuoteStrip extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'CFD · Nasdaq 100  ·  Demo \$${demo.balance.toStringAsFixed(2)}',
+                  'CFD · Nasdaq 100  ·  ${quotes.last > 0 ? quotes.last.toStringAsFixed(2) : '—'}  ·  Demo \$${demo.balance.toStringAsFixed(2)}',
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white54, fontSize: 11),
                 ),
@@ -98,7 +98,7 @@ class _Us100PositionsPanelState extends State<Us100PositionsPanel> {
           const Padding(
             padding: EdgeInsets.fromLTRB(10, 8, 10, 4),
             child: Text(
-              'Trade  ·  Open positions are stored on this device',
+              'Trade  ·  SL / TP like MT5  ·  tap a position to edit',
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ),
@@ -139,9 +139,12 @@ class _Us100PositionsPanelState extends State<Us100PositionsPanel> {
             color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
-        'Open ${p.openPrice.toStringAsFixed(2)}',
+        'Open ${p.openPrice.toStringAsFixed(2)}'
+        '${p.sl != null ? '  SL ${p.sl!.toStringAsFixed(2)}' : ''}'
+        '${p.tp != null ? '  TP ${p.tp!.toStringAsFixed(2)}' : ''}',
         style: const TextStyle(color: Colors.white54, fontSize: 11),
       ),
+      onTap: () => _editLevels(p),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -169,11 +172,16 @@ class _Us100PositionsPanelState extends State<Us100PositionsPanel> {
 
   Widget _closedRow(DemoTrade t) {
     final up = t.pnl >= 0;
+    final reason = t.closeReason == 'sl'
+        ? 'SL'
+        : t.closeReason == 'tp'
+            ? 'TP'
+            : 'closed';
     return ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
       title: Text(
-        '${t.symbol}  ${t.side}  ${t.lots.toStringAsFixed(2)}  closed',
+        '${t.symbol}  ${t.side}  ${t.lots.toStringAsFixed(2)}  $reason',
         style: const TextStyle(color: Colors.white70, fontSize: 12),
       ),
       subtitle: Text(
@@ -188,5 +196,76 @@ class _Us100PositionsPanelState extends State<Us100PositionsPanel> {
         ),
       ),
     );
+  }
+
+  Future<void> _editLevels(DemoPosition p) async {
+    final slCtrl = TextEditingController(text: p.sl?.toStringAsFixed(2) ?? '');
+    final tpCtrl = TextEditingController(text: p.tp?.toStringAsFixed(2) ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('Stop Loss / Take Profit',
+            style: TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Open ${p.openPrice.toStringAsFixed(2)}  ${p.side}\n'
+              'BUY: SL below / TP above. SELL: SL above / TP below.\n'
+              'Enter a price (e.g. 29050) or points (e.g. 40).',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: slCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Stop Loss',
+                labelStyle: TextStyle(color: Color(0xFFEF4444)),
+              ),
+            ),
+            TextField(
+              controller: tpCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Take Profit',
+                labelStyle: TextStyle(color: Color(0xFF22C55E)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      final sl = double.tryParse(slCtrl.text.trim());
+      final tp = double.tryParse(tpCtrl.text.trim());
+      final err = _demo.updateLevels(
+        p.id,
+        sl: sl,
+        tp: tp,
+        clearSl: slCtrl.text.trim().isEmpty,
+        clearTp: tpCtrl.text.trim().isEmpty,
+      );
+      if (err != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      } else {
+        _demo.applyStops(_quotes.bid, _quotes.ask);
+      }
+    }
+    slCtrl.dispose();
+    tpCtrl.dispose();
   }
 }

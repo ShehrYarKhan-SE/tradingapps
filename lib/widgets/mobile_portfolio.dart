@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../service/demo_trade_service.dart';
+import '../service/us100_quote_service.dart';
 
 class MobilePortfolio extends StatefulWidget {
   const MobilePortfolio({super.key});
@@ -21,11 +22,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
     super.initState();
     DemoTradeService.instance.init();
     DemoTradeService.instance.addListener(_onDemo);
+    Us100QuoteService.instance.attach();
+    Us100QuoteService.instance.addListener(_onDemo);
   }
 
   @override
   void dispose() {
     DemoTradeService.instance.removeListener(_onDemo);
+    Us100QuoteService.instance.removeListener(_onDemo);
+    Us100QuoteService.instance.detach();
     super.dispose();
   }
 
@@ -44,8 +49,98 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
     return '${months[t.month - 1]} ${t.day}, ${t.year} · $h:$m $ampm';
   }
 
+  Duration? _periodSpan() {
+    switch (_selectedPeriod) {
+      case '1D':
+        return const Duration(days: 1);
+      case '7D':
+        return const Duration(days: 7);
+      case '30D':
+        return const Duration(days: 30);
+      case '90D':
+        return const Duration(days: 90);
+      default:
+        return null;
+    }
+  }
+
+  List<DemoTrade> _tradesInPeriod() {
+    final all = DemoTradeService.instance.trades;
+    final span = _periodSpan();
+    if (span == null) return List<DemoTrade>.from(all);
+    final start = DateTime.now().subtract(span);
+    return all.where((t) => !t.closeTime.isBefore(start)).toList();
+  }
+
+  String _pct(num part, num total) {
+    if (total <= 0) return '(0%)';
+    return '(${(part / total * 100).toStringAsFixed(1)}%)';
+  }
+
+  String _signedMoney(double v) {
+    if (v > 0) return '+\$${v.toStringAsFixed(2)}';
+    if (v < 0) return '-\$${v.abs().toStringAsFixed(2)}';
+    return '\$0.00';
+  }
+
+  String _axisDate(DateTime t) => '${t.month}/${t.day}';
+
+  List<String> _axisLabels(List<DemoTrade> ordered) {
+    if (ordered.isEmpty) return const ['—', '—', '—', '—', '—'];
+    final first = ordered.first.closeTime;
+    final last = ordered.last.closeTime;
+    if (ordered.length == 1 || last.isAtSameMomentAs(first)) {
+      final d = _axisDate(first);
+      return [d, d, d, d, d];
+    }
+    return List.generate(5, (i) {
+      final t = first.add(Duration(
+        milliseconds:
+            (last.difference(first).inMilliseconds * i / 4).round(),
+      ));
+      return _axisDate(t);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final demo = DemoTradeService.instance;
+    final quotes = Us100QuoteService.instance;
+    final closed = _tradesInPeriod();
+    final wins = closed.where((t) => t.pnl > 0.005).length;
+    final losses = closed.where((t) => t.pnl < -0.005).length;
+    final be = closed.length - wins - losses;
+    final total = closed.length;
+    final realized = closed.fold<double>(0, (a, t) => a + t.pnl);
+    final floating = quotes.hasQuote
+        ? demo.positions.fold<double>(
+            0, (a, p) => a + p.pnl(quotes.bid, quotes.ask))
+        : 0.0;
+    DemoTrade? best;
+    DemoTrade? worst;
+    for (final t in closed) {
+      if (best == null || t.pnl > best.pnl) best = t;
+      if (worst == null || t.pnl < worst.pnl) worst = t;
+    }
+    final avg = total == 0 ? 0.0 : realized / total;
+    final winRate = total == 0 ? 0.0 : wins * 100 / total;
+    final longs = closed.where((t) => t.side == 'BUY').length;
+    final shorts = closed.where((t) => t.side == 'SELL').length;
+    final chronological = List<DemoTrade>.from(closed)
+      ..sort((a, b) => a.closeTime.compareTo(b.closeTime));
+    final curve = <double>[0];
+    var run = 0.0;
+    for (final t in chronological) {
+      run += t.pnl;
+      curve.add(run);
+    }
+    final axisLabels = chronological.isEmpty
+        ? const ['—', '—', '—', '—', '—']
+        : _axisLabels(chronological);
+    final pnlColor =
+        realized >= 0 ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
+    final shownTrades = closed.take(8).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
@@ -115,7 +210,11 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                           CustomPaint(
                             size: const Size(130, 130),
                             painter: DonutChartPainter(
-                              values: const [32, 16, 0],
+                              values: [
+                                wins.toDouble(),
+                                losses.toDouble(),
+                                be.toDouble(),
+                              ],
                               colors: const [
                                 Color(0xFF22C55E),
                                 Color(0xFFEF4444),
@@ -124,15 +223,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                               strokeWidth: 16,
                             ),
                           ),
-                          const Column(
+                          Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('48',
-                                  style: TextStyle(
+                              Text('$total',
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold)),
-                              Text('Total Trades',
+                              const Text('Total Trades',
                                   style: TextStyle(
                                       color: Colors.white54, fontSize: 10)),
                             ],
@@ -145,13 +244,13 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _legendRow('Profitable Trades', '32', '(66.7%)',
+                          _legendRow('Profitable Trades', '$wins', _pct(wins, total),
                               const Color(0xFF22C55E)),
                           const SizedBox(height: 12),
-                          _legendRow('Losing Trades', '16', '(33.3%)',
+                          _legendRow('Losing Trades', '$losses', _pct(losses, total),
                               const Color(0xFFEF4444)),
                           const SizedBox(height: 12),
-                          _legendRow('Break-even', '0', '(0%)',
+                          _legendRow('Break-even', '$be', _pct(be, total),
                               const Color(0xFF6B7280)),
                         ],
                       ),
@@ -173,24 +272,42 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                 Row(
                   children: [
                     Expanded(
-                        child: _summaryTile('Win Rate', '66.7%', Colors.white,
-                            '8.5%', true)),
+                        child: _summaryTile(
+                            'Win Rate',
+                            '${winRate.toStringAsFixed(1)}%',
+                            Colors.white,
+                            '$wins / $total',
+                            winRate >= 50)),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: _summaryTile('Best Trade', '+\$1,256.32',
-                            const Color(0xFF22C55E), '12.3%', true)),
+                        child: _summaryTile(
+                            'Best Trade',
+                            best == null ? '\$0.00' : _signedMoney(best.pnl),
+                            const Color(0xFF22C55E),
+                            best?.symbol ?? '—',
+                            true)),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
-                        child: _summaryTile('Worst Trade', '-\$512.45',
-                            const Color(0xFFEF4444), '6.2%', false)),
+                        child: _summaryTile(
+                            'Worst Trade',
+                            worst == null ? '\$0.00' : _signedMoney(worst.pnl),
+                            const Color(0xFFEF4444),
+                            worst?.symbol ?? '—',
+                            false)),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: _summaryTile('Avg Trade', '+\$132.45',
-                            const Color(0xFF22C55E), '8.1%', true)),
+                        child: _summaryTile(
+                            'Avg Trade',
+                            _signedMoney(avg),
+                            avg >= 0
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFFEF4444),
+                            '$total closed',
+                            avg >= 0)),
                   ],
                 ),
               ],
@@ -228,39 +345,34 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text('+\$6,356.72',
+                Text(_signedMoney(realized),
                     style: TextStyle(
-                        color: Color(0xFF22C55E),
+                        color: pnlColor,
                         fontSize: 24,
                         fontWeight: FontWeight.bold)),
+                if (demo.positions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Open P&L ${_signedMoney(floating)}  ·  Balance \$${demo.balance.toStringAsFixed(2)}',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 140,
                   width: double.infinity,
                   child: CustomPaint(
                     painter: LineAreaChartPainter(
-                      values: const [
-                        1200,
-                        2100,
-                        1800,
-                        3200,
-                        2800,
-                        4100,
-                        3600,
-                        4800,
-                        5200,
-                        4700,
-                        5800,
-                        6356.72
-                      ],
-                      lineColor: const Color(0xFF22C55E),
+                      values: curve,
+                      lineColor: pnlColor,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: ['May 1', 'May 8', 'May 15', 'May 22', 'May 29']
+                  children: axisLabels
                       .map((e) => Text(e,
                       style: TextStyle(
                           color: Colors.grey[600], fontSize: 10)))
@@ -289,7 +401,10 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                           CustomPaint(
                             size: const Size(130, 130),
                             painter: DonutChartPainter(
-                              values: const [28, 20],
+                              values: [
+                                longs.toDouble(),
+                                shorts.toDouble(),
+                              ],
                               colors: const [
                                 Color(0xFF8B5CF6),
                                 Color(0xFFEC4899)
@@ -297,15 +412,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                               strokeWidth: 16,
                             ),
                           ),
-                          const Column(
+                          Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('48',
-                                  style: TextStyle(
+                              Text('$total',
+                                  style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold)),
-                              Text('Total Trades',
+                              const Text('Total Trades',
                                   style: TextStyle(
                                       color: Colors.white54, fontSize: 10)),
                             ],
@@ -318,13 +433,13 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _legendRow('Long Trades', '28', '(58.3%)',
+                          _legendRow('Long Trades', '$longs', _pct(longs, total),
                               const Color(0xFF8B5CF6)),
                           const SizedBox(height: 12),
-                          _legendRow('Short Trades', '20', '(41.7%)',
+                          _legendRow('Short Trades', '$shorts', _pct(shorts, total),
                               const Color(0xFFEC4899)),
                           const SizedBox(height: 12),
-                          _legendRow('Total Trades', '48', '',
+                          _legendRow('Total Trades', '$total', '',
                               const Color(0xFF3B82F6)),
                         ],
                       ),
@@ -357,17 +472,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                 const SizedBox(height: 12),
                 Builder(
                   builder: (context) {
-                    final demo = DemoTradeService.instance;
-                    if (demo.trades.isEmpty) {
+                    if (shownTrades.isEmpty) {
                       return Text(
-                        'No practice trades yet. Open the Trade tab to buy or sell.',
+                        'No closed trades in this period. Open the Trade tab to buy or sell.',
                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                       );
                     }
                     final rows = <Widget>[];
-                    final list = demo.trades.take(5).toList();
-                    for (var i = 0; i < list.length; i++) {
-                      final t = list[i];
+                    for (var i = 0; i < shownTrades.length; i++) {
+                      final t = shownTrades[i];
                       if (i > 0) {
                         rows.add(const Divider(color: Colors.white10, height: 20));
                       }
@@ -375,8 +488,8 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                         t.symbol,
                         t.side == 'BUY' ? 'Buy' : 'Sell',
                         _formatTradeTime(t.closeTime),
-                        '${t.pnl >= 0 ? '+' : ''}\$${t.pnl.toStringAsFixed(2)}',
-                        '${t.lots.toStringAsFixed(2)} lot',
+                        _signedMoney(t.pnl),
+                        '${t.lots.toStringAsFixed(2)} lot · ${t.openPrice.toStringAsFixed(2)}→${t.closePrice.toStringAsFixed(2)}',
                         t.pnl >= 0,
                         t.side == 'BUY' ? const Color(0xFF1E88E5) : const Color(0xFFE53935),
                       ));
@@ -490,7 +603,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
   Widget _tradeItem(String symbol, String side, String time, String amount,
       String pct, bool isUp, Color iconColor) {
     final sideColor =
-    side == 'Long' ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
+    (side == 'Long' || side == 'Buy') ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
     final valueColor =
     isUp ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
     return Row(
@@ -589,10 +702,20 @@ class DonutChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final total = values.fold<double>(0, (a, b) => a + b);
-    if (total <= 0) return;
     final rect = Offset.zero & size;
     final center = rect.center;
     final radius = (math.min(size.width, size.height) - strokeWidth) / 2;
+    if (total <= 0) {
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = const Color(0xFF374151)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth,
+      );
+      return;
+    }
     double startAngle = -math.pi / 2;
 
     for (int i = 0; i < values.length; i++) {
@@ -627,6 +750,15 @@ class LineAreaChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
+    if (values.length == 1) {
+      final y = size.height * 0.45;
+      final linePaint = Paint()
+        ..color = lineColor
+        ..strokeWidth = 2.5;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), linePaint);
+      canvas.drawCircle(Offset(size.width, y), 4, Paint()..color = lineColor);
+      return;
+    }
     final maxV = values.reduce(math.max);
     final minV = values.reduce(math.min);
     final range = (maxV - minV) == 0 ? 1 : (maxV - minV);

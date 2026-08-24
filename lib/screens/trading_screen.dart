@@ -9,6 +9,8 @@ import '../widgets/mobile_portfolio.dart';
 import '../widgets/mobile_settings.dart';
 import '../service/demo_trade_service.dart';
 import '../service/chart_workspace.dart';
+import '../service/us100_quote_service.dart';
+import '../service/user_account_store.dart';
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
@@ -27,9 +29,17 @@ class _TradingScreenState extends State<TradingScreen> {
   void initState() {
     super.initState();
     DemoTradeService.instance.init();
+    UserAccountStore.instance.bindToCurrentUser();
+    Us100QuoteService.instance.attach();
     ChartWorkspace.loadSymbol().then((s) {
       if (mounted) setState(() => selectedSymbol = s);
     });
+  }
+
+  @override
+  void dispose() {
+    Us100QuoteService.instance.detach();
+    super.dispose();
   }
 
   void setMode(String newMode) => setState(() => mode = newMode);
@@ -84,7 +94,7 @@ class _TradingScreenState extends State<TradingScreen> {
           }),
           const Spacer(),
           const Text(
-            'Live · TradingView tools',
+            'Live · drawings · indicators',
             style: TextStyle(color: Colors.white38, fontSize: 11),
           ),
         ],

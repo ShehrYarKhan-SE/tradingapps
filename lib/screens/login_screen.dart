@@ -45,13 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-
-      _showMessage("Login Successful", isError: false);
-
-      await Future.delayed(const Duration(seconds: 1));
-
       if (!mounted) return;
-
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else {
       _showMessage(result.message);

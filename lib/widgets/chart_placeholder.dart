@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../service/chart_workspace.dart';
+import '../service/us100_quote_service.dart';
+import 'trade_levels_overlay.dart';
 
 class ChartScreen extends StatefulWidget {
   final bool visible;
@@ -30,12 +32,64 @@ class _ChartScreenState extends State<ChartScreen> {
   String _loadedSymbol = '';
   bool _loadedFullTools = true;
 
+  static const _desktopUa =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  static const _desktopViewport = '''
+(function(){
+  var m = document.querySelector('meta[name=viewport]');
+  if (!m) {
+    m = document.createElement('meta');
+    m.setAttribute('name','viewport');
+    document.head.appendChild(m);
+  }
+  m.setAttribute('content','width=1280, initial-scale=0.28, maximum-scale=3, user-scalable=yes');
+  window.dispatchEvent(new Event('resize'));
+})();
+''';
+
+  static const _priceBridge = '''
+(function(){
+  if (window.__tmBridge) return;
+  window.__tmBridge = true;
+  function parsePx(t){
+    if (!t) return 0;
+    var m = String(t).replace(/\\u00a0/g,' ').match(/\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d{4,}(?:\\.\\d+)?/);
+    if (!m) return 0;
+    var n = parseFloat(m[0].replace(/,/g,''));
+    return (n >= 50 && n <= 5000000) ? n : 0;
+  }
+  function read(){
+    var n = 0;
+    var sels = [
+      '.js-symbol-last',
+      '[class*="js-symbol-last"]',
+      '[class*="lastValue-"]',
+      '[class*="valueValue-"]',
+      '[data-name="legend-source-item"] [class*="valueValue"]',
+      '.tv-symbol-price-quote__value'
+    ];
+    for (var i = 0; i < sels.length && !n; i++) {
+      var nodes = document.querySelectorAll(sels[i]);
+      for (var j = 0; j < nodes.length && !n; j++) {
+        n = parsePx(nodes[j].textContent);
+      }
+    }
+    if (!n) n = parsePx(document.title);
+    if (n && window.TmQuote) TmQuote.postMessage(String(n));
+  }
+  setInterval(read, 700);
+  setTimeout(read, 400);
+  read();
+})();
+''';
+
   bool get _fullTools => !widget.compact;
 
   @override
   void initState() {
     super.initState();
-    _open(widget.displaySymbol, true);
+    _open(widget.displaySymbol, _fullTools);
   }
 
   @override
@@ -43,10 +97,11 @@ class _ChartScreenState extends State<ChartScreen> {
     super.didUpdateWidget(oldWidget);
     final toolsChanged = oldWidget.compact != widget.compact;
     final symbolChanged = oldWidget.displaySymbol != widget.displaySymbol;
-    if (symbolChanged) {
-      _open(widget.displaySymbol, true, force: true);
-    } else if ((widget.visible && !oldWidget.visible) || toolsChanged) {
+    if (symbolChanged || toolsChanged) {
+      _open(widget.displaySymbol, _fullTools, force: true);
+    } else if (widget.visible && !oldWidget.visible) {
       _resize();
+      _injectPriceBridge();
     }
   }
 
@@ -66,12 +121,22 @@ class _ChartScreenState extends State<ChartScreen> {
       final controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
         ..setBackgroundColor(const Color(0xFF0D1117))
-        ..setUserAgent(
-          'Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+        ..setUserAgent(_desktopUa)
+        ..addJavaScriptChannel(
+          'TmQuote',
+          onMessageReceived: (message) {
+            final n = double.tryParse(message.message);
+            if (n != null) {
+              Us100QuoteService.instance.ingestChartLast(n);
+            }
+          },
         )
         ..setNavigationDelegate(
           NavigationDelegate(
-            onPageFinished: (_) => _resize(),
+            onPageFinished: (_) {
+              _resize();
+              _injectPriceBridge();
+            },
             onWebResourceError: (error) {
               if (_usedFallbackHtml) return;
               _usedFallbackHtml = true;
@@ -94,6 +159,13 @@ class _ChartScreenState extends State<ChartScreen> {
       ),
     );
     if (mounted) setState(() => _ready = true);
+  }
+
+  void _injectPriceBridge() {
+    _controller?.runJavaScript(_priceBridge);
+    if (_fullTools) {
+      _controller?.runJavaScript(_desktopViewport);
+    }
   }
 
   void _resize() {
@@ -119,7 +191,10 @@ class _ChartScreenState extends State<ChartScreen> {
     }
     if (mounted) {
       setState(() => _immersive = next);
-      Future.delayed(const Duration(milliseconds: 350), _resize);
+      Future.delayed(const Duration(milliseconds: 350), () {
+        _resize();
+        _injectPriceBridge();
+      });
     }
   }
 
@@ -136,26 +211,11 @@ class _ChartScreenState extends State<ChartScreen> {
   }
 
   String _fallbackHtml(String display, String interval, bool fullTools) {
-    final uri = ChartWorkspace.embedUri(
+    return ChartWorkspace.widgetHtml(
       displaySymbol: display,
       interval: interval,
       fullTools: fullTools,
-    ).toString();
-    return """
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<style>
-html, body, iframe { margin:0; padding:0; height:100%; width:100%; background:#0d1117; border:0; }
-iframe { position:fixed; inset:0; }
-</style>
-</head>
-<body>
-<iframe id="${ChartWorkspace.frameIdOf(display)}" src="$uri" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
-</body>
-</html>
-""";
+    );
   }
 
   @override
@@ -180,6 +240,7 @@ iframe { position:fixed; inset:0; }
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
+          if (widget.compact) const Positioned.fill(child: TradeLevelsOverlay()),
           Positioned(
             bottom: 16,
             right: 8,

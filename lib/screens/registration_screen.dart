@@ -48,17 +48,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-
-      _showMessage("Registration Successful", isError: false);
-
-      await Future.delayed(const Duration(seconds: 1));
-
       if (!mounted) return;
-
       if (Navigator.of(context).canPop()) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-
     } else {
       _showMessage(result.message);
     }

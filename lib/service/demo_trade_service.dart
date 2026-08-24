@@ -10,6 +10,8 @@ class DemoPosition {
   final double lots;
   final double openPrice;
   final DateTime time;
+  final double? sl;
+  final double? tp;
 
   const DemoPosition({
     required this.id,
@@ -18,7 +20,22 @@ class DemoPosition {
     required this.lots,
     required this.openPrice,
     required this.time,
+    this.sl,
+    this.tp,
   });
+
+  DemoPosition copyWith({double? sl, double? tp, bool clearSl = false, bool clearTp = false}) {
+    return DemoPosition(
+      id: id,
+      symbol: symbol,
+      side: side,
+      lots: lots,
+      openPrice: openPrice,
+      time: time,
+      sl: clearSl ? null : (sl ?? this.sl),
+      tp: clearTp ? null : (tp ?? this.tp),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -27,6 +44,8 @@ class DemoPosition {
         'lots': lots,
         'openPrice': openPrice,
         'time': time.toIso8601String(),
+        'sl': sl,
+        'tp': tp,
       };
 
   factory DemoPosition.fromJson(Map<String, dynamic> json) => DemoPosition(
@@ -36,12 +55,24 @@ class DemoPosition {
         lots: (json['lots'] as num).toDouble(),
         openPrice: (json['openPrice'] as num).toDouble(),
         time: DateTime.parse(json['time'] as String),
+        sl: (json['sl'] as num?)?.toDouble(),
+        tp: (json['tp'] as num?)?.toDouble(),
       );
 
   double pnl(double bid, double ask) {
     final exit = side == 'BUY' ? bid : ask;
     final delta = side == 'BUY' ? exit - openPrice : openPrice - exit;
     return delta * lots * pointValue;
+  }
+
+  bool hitTakeProfit(double bid, double ask) {
+    if (tp == null) return false;
+    return side == 'BUY' ? bid >= tp! : ask <= tp!;
+  }
+
+  bool hitStopLoss(double bid, double ask) {
+    if (sl == null) return false;
+    return side == 'BUY' ? bid <= sl! : ask >= sl!;
   }
 
   static const double pointValue = 10;
@@ -57,6 +88,9 @@ class DemoTrade {
   final double pnl;
   final DateTime time;
   final DateTime closeTime;
+  final double? sl;
+  final double? tp;
+  final String closeReason;
 
   const DemoTrade({
     required this.id,
@@ -68,6 +102,9 @@ class DemoTrade {
     required this.pnl,
     required this.time,
     required this.closeTime,
+    this.sl,
+    this.tp,
+    this.closeReason = 'manual',
   });
 
   Map<String, dynamic> toJson() => {
@@ -80,6 +117,9 @@ class DemoTrade {
         'pnl': pnl,
         'time': time.toIso8601String(),
         'closeTime': closeTime.toIso8601String(),
+        'sl': sl,
+        'tp': tp,
+        'closeReason': closeReason,
       };
 
   factory DemoTrade.fromJson(Map<String, dynamic> json) => DemoTrade(
@@ -94,6 +134,9 @@ class DemoTrade {
         closeTime: DateTime.parse(
           (json['closeTime'] as String?) ?? json['time'] as String,
         ),
+        sl: (json['sl'] as num?)?.toDouble(),
+        tp: (json['tp'] as num?)?.toDouble(),
+        closeReason: json['closeReason'] as String? ?? 'manual',
       );
 }
 
@@ -183,17 +226,38 @@ class DemoTradeService extends ChangeNotifier {
     return null;
   }
 
+  /// Absolute price, or MT5-style distance in points when the value is small.
+  static double? resolveLevel({
+    required String side,
+    required bool isStopLoss,
+    required double fill,
+    double? raw,
+  }) {
+    if (raw == null || raw <= 0) return null;
+    final asPrice = raw >= 10000;
+    if (asPrice) return raw;
+    return isStopLoss
+        ? (side == 'BUY' ? fill - raw : fill + raw)
+        : (side == 'BUY' ? fill + raw : fill - raw);
+  }
+
   String? openMarket({
     required String side,
     required double lots,
     required double bid,
     required double ask,
+    double? sl,
+    double? tp,
   }) {
     if (lots < 0.01) return 'Minimum volume is 0.01 lots';
     final price = side == 'BUY' ? ask : bid;
-    if (price <= 0) return 'No quote';
+    if (price <= 0) return 'No live quote — wait for the price to load';
     final margin = lots * 100;
     if (margin > balance) return 'Not enough demo margin';
+    final slPx = resolveLevel(side: side, isStopLoss: true, fill: price, raw: sl);
+    final tpPx = resolveLevel(side: side, isStopLoss: false, fill: price, raw: tp);
+    final slErr = _validateLevels(side: side, open: price, sl: slPx, tp: tpPx);
+    if (slErr != null) return slErr;
 
     positions.insert(
       0,
@@ -204,19 +268,78 @@ class DemoTradeService extends ChangeNotifier {
         lots: lots,
         openPrice: price,
         time: DateTime.now(),
+        sl: slPx,
+        tp: tpPx,
       ),
     );
+    _persist();
+    notifyListeners();
+    applyStops(bid, ask);
+    return null;
+  }
+
+  String? updateLevels(String id, {double? sl, double? tp, bool clearSl = false, bool clearTp = false}) {
+    final idx = positions.indexWhere((p) => p.id == id);
+    if (idx < 0) return 'Position not found';
+    final p = positions[idx];
+    final nextSl = clearSl
+        ? null
+        : resolveLevel(
+              side: p.side,
+              isStopLoss: true,
+              fill: p.openPrice,
+              raw: sl,
+            ) ??
+            (sl == null ? p.sl : sl);
+    final nextTp = clearTp
+        ? null
+        : resolveLevel(
+              side: p.side,
+              isStopLoss: false,
+              fill: p.openPrice,
+              raw: tp,
+            ) ??
+            (tp == null ? p.tp : tp);
+    final err = _validateLevels(side: p.side, open: p.openPrice, sl: nextSl, tp: nextTp);
+    if (err != null) return err;
+    positions[idx] = p.copyWith(sl: nextSl, tp: nextTp, clearSl: nextSl == null, clearTp: nextTp == null);
     _persist();
     notifyListeners();
     return null;
   }
 
-  String? closePosition(String id, double bid, double ask) {
+  String? _validateLevels({
+    required String side,
+    required double open,
+    double? sl,
+    double? tp,
+  }) {
+    if (sl != null && sl <= 0) return 'SL must be greater than 0';
+    if (tp != null && tp <= 0) return 'TP must be greater than 0';
+    if (side == 'BUY') {
+      if (sl != null && sl >= open) return 'Buy SL must be below open price';
+      if (tp != null && tp <= open) return 'Buy TP must be above open price';
+    } else {
+      if (sl != null && sl <= open) return 'Sell SL must be above open price';
+      if (tp != null && tp >= open) return 'Sell TP must be below open price';
+    }
+    return null;
+  }
+
+  String? closePosition(
+    String id,
+    double bid,
+    double ask, {
+    String reason = 'manual',
+    double? atPrice,
+  }) {
     final idx = positions.indexWhere((p) => p.id == id);
     if (idx < 0) return 'Position not found';
     final p = positions.removeAt(idx);
-    final pnl = p.pnl(bid, ask);
-    final closePrice = p.side == 'BUY' ? bid : ask;
+    final closePrice = atPrice ?? (p.side == 'BUY' ? bid : ask);
+    final delta =
+        p.side == 'BUY' ? closePrice - p.openPrice : p.openPrice - closePrice;
+    final pnl = delta * p.lots * DemoPosition.pointValue;
     balance += pnl;
     trades.insert(
       0,
@@ -230,12 +353,30 @@ class DemoTradeService extends ChangeNotifier {
         pnl: pnl,
         time: p.time,
         closeTime: DateTime.now(),
+        sl: p.sl,
+        tp: p.tp,
+        closeReason: reason,
       ),
     );
-    if (trades.length > 120) trades.removeRange(120, trades.length);
+    if (trades.length > 400) trades.removeRange(400, trades.length);
     _persist();
     notifyListeners();
     return null;
+  }
+
+  void applyStops(double bid, double ask) {
+    if (positions.isEmpty) return;
+    final hits = <({String id, String reason, double at})>[];
+    for (final p in List<DemoPosition>.from(positions)) {
+      if (p.hitStopLoss(bid, ask) && p.sl != null) {
+        hits.add((id: p.id, reason: 'sl', at: p.sl!));
+      } else if (p.hitTakeProfit(bid, ask) && p.tp != null) {
+        hits.add((id: p.id, reason: 'tp', at: p.tp!));
+      }
+    }
+    for (final h in hits) {
+      closePosition(h.id, bid, ask, reason: h.reason, atPrice: h.at);
+    }
   }
 
   Future<void> _persist() async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -36,8 +38,7 @@ class AuthService {
 
       final cred = await FirebaseAuth.instance
           .signInWithCredential(credential);
-      await UserAccountStore.instance.bindToCurrentUser();
-      await DemoTradeService.instance.init();
+      unawaited(_hydrateSession());
       return cred;
 
     } catch (e) {
@@ -60,8 +61,7 @@ class AuthService {
 
       final cred = await FirebaseAuth.instance
           .signInWithCredential(credential);
-      await UserAccountStore.instance.bindToCurrentUser();
-      await DemoTradeService.instance.init();
+      unawaited(_hydrateSession());
       return cred;
     } catch (e) {
       print("Facebook Login Error: $e");
@@ -84,11 +84,7 @@ class AuthService {
       );
 
       await result.user!.updateDisplayName(username);
-      await UserAccountStore.instance.bindToCurrentUser();
-      UserAccountStore.instance.username = username.trim();
-      UserAccountStore.instance.displayName = username.trim();
-      await UserAccountStore.instance.saveAll();
-      await DemoTradeService.instance.init();
+      unawaited(_hydrateSession(username: username.trim()));
 
       return AuthResult(
         success: true,
@@ -115,8 +111,7 @@ class AuthService {
         password: password,
       );
 
-      await UserAccountStore.instance.bindToCurrentUser();
-      await DemoTradeService.instance.init();
+      unawaited(_hydrateSession());
 
       return AuthResult(
         success: true,
@@ -149,5 +144,15 @@ class AuthService {
     DemoTradeService.instance.resetMemory();
     UserAccountStore.instance.resetMemory();
     await FirebaseAuth.instance.currentUser?.delete();
+  }
+
+  static Future<void> _hydrateSession({String? username}) async {
+    await UserAccountStore.instance.bindToCurrentUser();
+    if (username != null && username.isNotEmpty) {
+      UserAccountStore.instance.username = username;
+      UserAccountStore.instance.displayName = username;
+      await UserAccountStore.instance.saveAll();
+    }
+    await DemoTradeService.instance.init();
   }
 }

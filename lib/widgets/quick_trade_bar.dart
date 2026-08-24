@@ -13,6 +13,8 @@ class QuickTradeBar extends StatefulWidget {
 
 class _QuickTradeBarState extends State<QuickTradeBar> {
   double _lots = 0.04;
+  final _slCtrl = TextEditingController();
+  final _tpCtrl = TextEditingController();
   final _quotes = Us100QuoteService.instance;
   final _demo = DemoTradeService.instance;
 
@@ -31,6 +33,8 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
   void dispose() {
     _quotes.removeListener(_tick);
     _quotes.detach();
+    _slCtrl.dispose();
+    _tpCtrl.dispose();
     super.dispose();
   }
 
@@ -45,12 +49,29 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
     });
   }
 
-  void _submit(String side) {
+  Future<void> _submit(String side) async {
+    await _quotes.refreshNow();
+    if (!_quotes.hasQuote) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          duration: Duration(seconds: 2),
+          backgroundColor: Color(0xFF7F1D1D),
+          content: Text('Waiting for live price. Try again in a moment.'),
+        ),
+      );
+      return;
+    }
+    final fill = side == 'BUY' ? _quotes.ask : _quotes.bid;
+    final sl = double.tryParse(_slCtrl.text.trim());
+    final tp = double.tryParse(_tpCtrl.text.trim());
     final err = _demo.openMarket(
       side: side,
       lots: _lots,
       bid: _quotes.bid,
       ask: _quotes.ask,
+      sl: sl,
+      tp: tp,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -61,7 +82,7 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
             : const Color(0xFF7F1D1D),
         content: Text(
           err ??
-              'Demo ${side == 'BUY' ? 'Buy' : 'Sell'} $_lots US100 @ ${side == 'BUY' ? _quotes.ask.toStringAsFixed(2) : _quotes.bid.toStringAsFixed(2)}',
+              'Demo ${side == 'BUY' ? 'Buy' : 'Sell'} $_lots US100 @ ${fill.toStringAsFixed(2)}',
         ),
       ),
     );
@@ -72,20 +93,61 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
     return Container(
       color: const Color(0xFFF3F3F3),
       padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(child: _sideButton('SELL', _quotes.bid, _sell, () => _submit('SELL'))),
-          const SizedBox(width: 6),
-          _lotBox(),
-          const SizedBox(width: 6),
-          Expanded(child: _sideButton('BUY', _quotes.ask, _buy, () => _submit('BUY'))),
+          Row(
+            children: [
+              Expanded(child: _sideButton('SELL', _quotes.bid, _sell, () => _submit('SELL'))),
+              const SizedBox(width: 6),
+              _lotBox(),
+              const SizedBox(width: 6),
+              Expanded(child: _sideButton('BUY', _quotes.ask, _buy, () => _submit('BUY'))),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(child: _levelField('SL', _slCtrl, const Color(0xFFB91C1C))),
+              const SizedBox(width: 6),
+              Expanded(child: _levelField('TP', _tpCtrl, const Color(0xFF15803D))),
+            ],
+          ),
         ],
       ),
     );
   }
 
+  Widget _levelField(String label, TextEditingController ctrl, Color accent) {
+    return SizedBox(
+      height: 36,
+      child: TextField(
+        controller: ctrl,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
+        decoration: InputDecoration(
+          isDense: true,
+          prefixText: '$label  ',
+          prefixStyle: TextStyle(color: accent, fontSize: 12, fontWeight: FontWeight.w800),
+          hintText: 'price or pts',
+          hintStyle: const TextStyle(color: Colors.black38, fontSize: 12),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(2),
+            borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(2),
+            borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _sideButton(String label, double price, Color color, VoidCallback onTap) {
-    final text = price.toStringAsFixed(2);
+    final text = price > 0 ? price.toStringAsFixed(2) : '--.--';
     final main = text.substring(0, text.length - 2);
     final frac = text.substring(text.length - 2);
     return Material(

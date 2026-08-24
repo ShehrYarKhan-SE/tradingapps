@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../service/demo_trade_service.dart';
 import '../service/us100_quote_service.dart';
+import '../service/ai_coach_service.dart';
 
 /// MT5-style one-click bar: SELL | lot size | BUY
 class QuickTradeBar extends StatefulWidget {
@@ -13,8 +14,6 @@ class QuickTradeBar extends StatefulWidget {
 
 class _QuickTradeBarState extends State<QuickTradeBar> {
   double _lots = 0.04;
-  final _slCtrl = TextEditingController();
-  final _tpCtrl = TextEditingController();
   final _quotes = Us100QuoteService.instance;
   final _demo = DemoTradeService.instance;
 
@@ -33,8 +32,6 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
   void dispose() {
     _quotes.removeListener(_tick);
     _quotes.detach();
-    _slCtrl.dispose();
-    _tpCtrl.dispose();
     super.dispose();
   }
 
@@ -50,7 +47,7 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
   }
 
   Future<void> _submit(String side) async {
-    await _quotes.refreshNow();
+    await _quotes.prepareFill();
     if (!_quotes.hasQuote) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -63,15 +60,72 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
       return;
     }
     final fill = side == 'BUY' ? _quotes.ask : _quotes.bid;
-    final sl = double.tryParse(_slCtrl.text.trim());
-    final tp = double.tryParse(_tpCtrl.text.trim());
+    final risk = AiCoachService.instance.assessOrder(
+      side: side,
+      lots: _lots,
+      sl: null,
+      tp: null,
+    );
+    if (risk.shouldWarn) {
+      final go = await showModalBottomSheet<bool>(
+        context: context,
+        backgroundColor: const Color(0xFF141B2E),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(risk.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 10),
+                ...risk.points.map(
+                  (p) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('•  ', style: TextStyle(color: Color(0xFFFBBF24))),
+                        Expanded(child: Text(p, style: const TextStyle(color: Colors.white70, height: 1.35))),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Place anyway'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      if (go != true) return;
+      if (!mounted) return;
+    }
     final err = _demo.openMarket(
       side: side,
       lots: _lots,
       bid: _quotes.bid,
       ask: _quotes.ask,
-      sl: sl,
-      tp: tp,
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -93,9 +147,7 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
     return Container(
       color: const Color(0xFFF3F3F3),
       padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
-      child: Column(
-        children: [
-          Row(
+      child: Row(
             children: [
               Expanded(child: _sideButton('SELL', _quotes.bid, _sell, () => _submit('SELL'))),
               const SizedBox(width: 6),
@@ -104,45 +156,6 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
               Expanded(child: _sideButton('BUY', _quotes.ask, _buy, () => _submit('BUY'))),
             ],
           ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(child: _levelField('SL', _slCtrl, const Color(0xFFB91C1C))),
-              const SizedBox(width: 6),
-              Expanded(child: _levelField('TP', _tpCtrl, const Color(0xFF15803D))),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _levelField(String label, TextEditingController ctrl, Color accent) {
-    return SizedBox(
-      height: 36,
-      child: TextField(
-        controller: ctrl,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        style: const TextStyle(color: Colors.black, fontSize: 13, fontWeight: FontWeight.w600),
-        decoration: InputDecoration(
-          isDense: true,
-          prefixText: '$label  ',
-          prefixStyle: TextStyle(color: accent, fontSize: 12, fontWeight: FontWeight.w800),
-          hintText: 'price or pts',
-          hintStyle: const TextStyle(color: Colors.black38, fontSize: 12),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(2),
-            borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(2),
-            borderSide: const BorderSide(color: Color(0xFFD0D0D0)),
-          ),
-        ),
-      ),
     );
   }
 

@@ -492,6 +492,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                         '${t.lots.toStringAsFixed(2)} lot · ${t.openPrice.toStringAsFixed(2)}→${t.closePrice.toStringAsFixed(2)}',
                         t.pnl >= 0,
                         t.side == 'BUY' ? const Color(0xFF1E88E5) : const Color(0xFFE53935),
+                        review: t.review,
                       ));
                     }
                     return Column(children: rows);
@@ -601,12 +602,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
   }
 
   Widget _tradeItem(String symbol, String side, String time, String amount,
-      String pct, bool isUp, Color iconColor) {
+      String pct, bool isUp, Color iconColor, {String? review}) {
     final sideColor =
     (side == 'Long' || side == 'Buy') ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
     final valueColor =
     isUp ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
       children: [
         Container(
           width: 36,
@@ -663,6 +667,15 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
             Text(pct, style: TextStyle(color: valueColor, fontSize: 11)),
           ],
         ),
+      ],
+    ),
+        if (review != null && review.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text(
+            review,
+            style: const TextStyle(color: Color(0xFFC4B5FD), fontSize: 11, height: 1.35),
+          ),
+        ],
       ],
     );
   }

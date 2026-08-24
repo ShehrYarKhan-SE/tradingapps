@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../screens/ai_coach_screen.dart';
+import '../screens/learning_path_screen.dart';
 import '../screens/profile_screen.dart';
+import '../service/ai_coach_service.dart';
+import '../service/ai_learning_store.dart';
 import '../service/user_account_store.dart';
 
 class MobileHome extends StatelessWidget {
@@ -229,7 +233,14 @@ class MobileHome extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AiCoachScreen(),
+                                ),
+                              );
+                            },
                             child: _buildCardButton(
                               'AI Coach',
                               Icons.smart_toy_outlined,
@@ -298,13 +309,85 @@ class MobileHome extends StatelessWidget {
           // ---------------- Learning Progress + Daily Streak ----------------
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: _buildLearningProgressCard()),
-                const SizedBox(width: 12),
-                Expanded(child: _buildDailyStreakCard()),
-              ],
+            child: ListenableBuilder(
+              listenable: AiLearningStore.instance,
+              builder: (context, _) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _openLearning(context),
+                        child: _buildLearningProgressCard(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => _openLearning(context),
+                        child: _buildDailyStreakCard(),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ListenableBuilder(
+              listenable: AiLearningStore.instance,
+              builder: (context, _) {
+                final text = AiLearningStore.instance.briefing.isEmpty
+                    ? AiCoachService.instance.dailyBriefing()
+                    : AiLearningStore.instance.briefing;
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AiCoachScreen(seed: text),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8B5CF6).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.35)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.wb_twilight, color: Color(0xFFC4B5FD), size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Daily briefing',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          text,
+                          style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -314,7 +397,12 @@ class MobileHome extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AiCoachScreen()),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -363,6 +451,17 @@ class MobileHome extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _openLearning(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => LearningPathScreen(
+          onPracticeTrade: () => onTabChange('trade'),
+        ),
       ),
     );
   }
@@ -638,7 +737,9 @@ class MobileHome extends StatelessWidget {
   }
 
   Widget _buildLearningProgressCard() {
-    const double progress = 0.68;
+    final store = AiLearningStore.instance;
+    final progress = store.progress;
+    final pct = (progress * 100).round();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -649,9 +750,9 @@ class MobileHome extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Text(
                 "Learning Progress",
                 style: TextStyle(
@@ -685,16 +786,16 @@ class MobileHome extends StatelessWidget {
                       width: 56,
                       height: 56,
                       child: CircularProgressIndicator(
-                        value: progress,
+                        value: progress == 0 ? 0.02 : progress,
                         strokeWidth: 6,
                         color: const Color(0xFF22C55E),
                         backgroundColor: Colors.transparent,
                         strokeCap: StrokeCap.round,
                       ),
                     ),
-                    const Text(
-                      "68%",
-                      style: TextStyle(
+                    Text(
+                      "$pct%",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
@@ -704,18 +805,18 @@ class MobileHome extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "Continue your journey",
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      "12 / 18 Lessons",
-                      style: TextStyle(
+                      "${store.completedCount} / ${store.totalLessons} Lessons",
+                      style: const TextStyle(
                         color: Color(0xFF22C55E),
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -732,6 +833,7 @@ class MobileHome extends StatelessWidget {
   }
 
   Widget _buildDailyStreakCard() {
+    final days = AiLearningStore.instance.streakDays;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -741,8 +843,8 @@ class MobileHome extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Row(
+        children: [
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
@@ -756,28 +858,28 @@ class MobileHome extends StatelessWidget {
               Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 18),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 24),
-              SizedBox(width: 8),
+              const Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 24),
+              const SizedBox(width: 8),
               Text(
-                "7 Days",
-                style: TextStyle(
+                "$days Day${days == 1 ? '' : 's'}",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Spacer(),
-              Icon(Icons.chevron_right, color: Colors.white54, size: 18),
+              const Spacer(),
+              const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
             ],
           ),
-          SizedBox(height: 6),
+          const SizedBox(height: 6),
           Text(
-            "Great job!",
+            days == 0 ? "Study or trade to start" : "Keep the streak going",
             style: TextStyle(
-              color: Color(0xFF22C55E),
+              color: days == 0 ? Colors.white54 : const Color(0xFF22C55E),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),

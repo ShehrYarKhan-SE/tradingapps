@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tradingapps/theme_controller.dart';
 import '../screens/profile_screen.dart';
+import '../screens/Notification_Screen.dart';
 import '../service/user_account_store.dart';
+import '../service/ai_learning_store.dart';
 
 class MobileSettings extends StatelessWidget {
   const MobileSettings({super.key});
@@ -207,7 +209,11 @@ class MobileSettings extends StatelessWidget {
                 'subtitle': 'Manage your price alerts',
                 'color': const Color(0xFF8B5CF6),
                 'onTap': () {
-                  // TODO: navigate to Price Alerts screen
+                  AiLearningStore.instance.bind();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                  );
                 },
               },
               {

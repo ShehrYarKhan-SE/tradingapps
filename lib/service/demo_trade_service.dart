@@ -91,6 +91,7 @@ class DemoTrade {
   final double? sl;
   final double? tp;
   final String closeReason;
+  final String? review;
 
   const DemoTrade({
     required this.id,
@@ -105,7 +106,26 @@ class DemoTrade {
     this.sl,
     this.tp,
     this.closeReason = 'manual',
+    this.review,
   });
+
+  DemoTrade copyWith({String? review}) {
+    return DemoTrade(
+      id: id,
+      symbol: symbol,
+      side: side,
+      lots: lots,
+      openPrice: openPrice,
+      closePrice: closePrice,
+      pnl: pnl,
+      time: time,
+      closeTime: closeTime,
+      sl: sl,
+      tp: tp,
+      closeReason: closeReason,
+      review: review ?? this.review,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -120,6 +140,7 @@ class DemoTrade {
         'sl': sl,
         'tp': tp,
         'closeReason': closeReason,
+        'review': review,
       };
 
   factory DemoTrade.fromJson(Map<String, dynamic> json) => DemoTrade(
@@ -137,6 +158,7 @@ class DemoTrade {
         sl: (json['sl'] as num?)?.toDouble(),
         tp: (json['tp'] as num?)?.toDouble(),
         closeReason: json['closeReason'] as String? ?? 'manual',
+        review: json['review'] as String?,
       );
 }
 
@@ -308,6 +330,25 @@ class DemoTradeService extends ChangeNotifier {
     return null;
   }
 
+  String? setAbsoluteLevels(String id, {double? sl, double? tp}) {
+    final idx = positions.indexWhere((p) => p.id == id);
+    if (idx < 0) return 'Position not found';
+    final p = positions[idx];
+    final nextSl = sl;
+    final nextTp = tp;
+    final err = _validateLevels(side: p.side, open: p.openPrice, sl: nextSl, tp: nextTp);
+    if (err != null) return err;
+    positions[idx] = p.copyWith(
+      sl: nextSl,
+      tp: nextTp,
+      clearSl: nextSl == null,
+      clearTp: nextTp == null,
+    );
+    _persist();
+    notifyListeners();
+    return null;
+  }
+
   String? _validateLevels({
     required String side,
     required double open,
@@ -362,6 +403,15 @@ class DemoTradeService extends ChangeNotifier {
     _persist();
     notifyListeners();
     return null;
+  }
+
+  void setTradeReview(String id, String review) {
+    final idx = trades.indexWhere((t) => t.id == id);
+    if (idx < 0) return;
+    if (trades[idx].review == review) return;
+    trades[idx] = trades[idx].copyWith(review: review);
+    _persist();
+    notifyListeners();
   }
 
   void applyStops(double bid, double ask) {

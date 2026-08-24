@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../service/auth_service.dart';
+import '../service/ai_learning_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/profile_screen.dart';
 import '../screens/Notification_Screen.dart';
@@ -26,7 +27,6 @@ class MobileHeader extends StatefulWidget {
 
 class _MobileHeaderState extends State<MobileHeader> {
   bool isMenuOpen = false;
-  int notificationCount = 3;
 
   void _showMenu() {
     showModalBottomSheet(
@@ -522,49 +522,58 @@ class _MobileHeaderState extends State<MobileHeader> {
 
           const Spacer(),
 
-          // Notifications - clickable, no border/box
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen(),
-                ),
-              );
-            },
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(Icons.notifications_outlined, color: Colors.grey[400], size: 22),
-                if (notificationCount > 0)
-                  Positioned(
-                    top: -6,
-                    right: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFEF4444).withOpacity(0.6),
-                            blurRadius: 8,
+          Material(
+            color: Colors.transparent,
+            child: ListenableBuilder(
+              listenable: AiLearningStore.instance,
+              builder: (context, _) {
+                final notificationCount = AiLearningStore.instance.notices.length;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    AiLearningStore.instance.bind();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(Icons.notifications_outlined, color: Colors.grey[400], size: 22),
+                        if (notificationCount > 0)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                notificationCount > 9 ? '9+' : '$notificationCount',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        '$notificationCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      ],
                     ),
                   ),
-              ],
+                );
+              },
             ),
           ),
         ],

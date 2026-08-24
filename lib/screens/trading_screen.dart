@@ -11,6 +11,8 @@ import '../service/demo_trade_service.dart';
 import '../service/chart_workspace.dart';
 import '../service/us100_quote_service.dart';
 import '../service/user_account_store.dart';
+import '../service/ai_coach_service.dart';
+import '../service/ai_learning_store.dart';
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
@@ -31,6 +33,7 @@ class _TradingScreenState extends State<TradingScreen> {
     DemoTradeService.instance.init();
     UserAccountStore.instance.bindToCurrentUser();
     Us100QuoteService.instance.attach();
+    AiLearningStore.instance.bind();
     ChartWorkspace.loadSymbol().then((s) {
       if (mounted) setState(() => selectedSymbol = s);
     });
@@ -44,6 +47,39 @@ class _TradingScreenState extends State<TradingScreen> {
 
   void setMode(String newMode) => setState(() => mode = newMode);
   void setActiveTab(String tab) => setState(() => activeTab = tab);
+
+  void _explainChart() {
+    final text = AiCoachService.instance.explainChart(selectedSymbol);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF141B2E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Chart explainer',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              Text(text, style: const TextStyle(color: Colors.white70, height: 1.4)),
+              const SizedBox(height: 8),
+              const Text(
+                'Educational only — not a buy or sell signal.',
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void openChart(String symbol) {
     ChartWorkspace.saveSymbol(symbol);
@@ -93,10 +129,31 @@ class _TradingScreenState extends State<TradingScreen> {
             );
           }),
           const Spacer(),
-          const Text(
-            'Live · drawings · indicators',
-            style: TextStyle(color: Colors.white38, fontSize: 11),
-          ),
+          if (activeTab == 'chart')
+            GestureDetector(
+              onTap: _explainChart,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.45)),
+                ),
+                child: const Text(
+                  'Explain',
+                  style: TextStyle(
+                    color: Color(0xFFC4B5FD),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            )
+          else
+            const Text(
+              'Live · drawings · indicators',
+              style: TextStyle(color: Colors.white38, fontSize: 11),
+            ),
         ],
       ),
     );

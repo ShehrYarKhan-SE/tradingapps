@@ -6,6 +6,7 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 import 'demo_trade_service.dart';
 import 'user_account_store.dart';
+import 'ai_learning_store.dart';
 class AuthResult {
   final bool success;
   final String message;
@@ -130,6 +131,7 @@ class AuthService {
   static Future<void> logout() async {
     await DemoTradeService.instance.flushAndReset();
     UserAccountStore.instance.resetMemory();
+    AiLearningStore.instance.resetMemory();
     try {
       await GoogleSignIn().signOut();
     } catch (_) {}
@@ -143,6 +145,7 @@ class AuthService {
     await UserAccountStore.instance.deleteCloudData();
     DemoTradeService.instance.resetMemory();
     UserAccountStore.instance.resetMemory();
+    AiLearningStore.instance.resetMemory();
     await FirebaseAuth.instance.currentUser?.delete();
   }
 
@@ -154,5 +157,6 @@ class AuthService {
       await UserAccountStore.instance.saveAll();
     }
     await DemoTradeService.instance.init();
+    await AiLearningStore.instance.bind();
   }
 }

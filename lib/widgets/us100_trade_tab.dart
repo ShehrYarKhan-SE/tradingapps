@@ -98,7 +98,7 @@ class _Us100PositionsPanelState extends State<Us100PositionsPanel> {
           const Padding(
             padding: EdgeInsets.fromLTRB(10, 8, 10, 4),
             child: Text(
-              'Trade  ·  SL / TP like MT5  ·  tap a position to edit',
+              'Trade  ·  tap a position to close',
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
           ),

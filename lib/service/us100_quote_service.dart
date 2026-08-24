@@ -25,8 +25,14 @@ class Us100QuoteService extends ChangeNotifier {
   Future<void>? _inFlight;
   Timer? _timer;
   int _listeners = 0;
+  bool _fromChart = false;
 
   bool get hasQuote => last > 0 && bid > 0 && ask > 0;
+
+  bool get chartFresh =>
+      _fromChart &&
+      _chartTickAt != null &&
+      DateTime.now().difference(_chartTickAt!) < const Duration(seconds: 20);
 
   bool get live =>
       hasQuote &&
@@ -51,14 +57,21 @@ class Us100QuoteService extends ChangeNotifier {
 
   /// Chart last price (same number shown on TradingView). Spread is synthetic.
   void ingestChartLast(double lastPx) {
-    if (lastPx <= 0) return;
-    if (last > 0) {
-      if ((lastPx - last).abs() / last > 0.12) return;
-    } else if (lastPx < 50) {
-      return;
-    }
+    if (lastPx <= 0 || lastPx < 50) return;
+    if (last > 0 && (lastPx - last).abs() / last > 0.25) return;
     _chartTickAt = DateTime.now();
+    _fromChart = true;
     _apply(lastPx, lastPx - typicalSpread / 2, lastPx + typicalSpread / 2);
+  }
+
+  /// Prefer the chart tick. Do not pull a stale HTTP quote over a live pane.
+  Future<void> prepareFill() async {
+    if (chartFresh) return;
+    for (var i = 0; i < 6; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+      if (chartFresh) return;
+    }
+    if (!chartFresh) await refreshNow();
   }
 
   Future<void> refreshNow() {
@@ -67,8 +80,6 @@ class Us100QuoteService extends ChangeNotifier {
   }
 
   Future<void> _doRefresh() async {
-    final chartFresh = _chartTickAt != null &&
-        DateTime.now().difference(_chartTickAt!) < const Duration(seconds: 2);
     if (chartFresh) return;
 
     final quote = await _fromAnyHttp();
@@ -80,6 +91,11 @@ class Us100QuoteService extends ChangeNotifier {
       }
       return;
     }
+    if (_chartTickAt != null && last > 0) {
+      final drift = (quote.$1 - last).abs() / last;
+      if (drift > 0.0015) return;
+    }
+    _fromChart = false;
     _apply(quote.$1, quote.$2, quote.$3);
   }
 

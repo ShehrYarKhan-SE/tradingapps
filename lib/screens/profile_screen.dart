@@ -6,6 +6,8 @@ import 'package:country_picker/country_picker.dart';
 import '../service/auth_service.dart';
 import '../service/demo_trade_service.dart';
 import '../service/user_account_store.dart';
+import '../service/ai_learning_store.dart';
+import 'Notification_Screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -528,28 +530,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         centerTitle: false,
         actions: [
-          Stack(
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: Icon(Icons.notifications_none, color: textPrimary, size: 26),
-              ),
-              Positioned(
-                right: 12,
-                top: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    "3",
-                    style: TextStyle(color: Colors.white, fontSize: 10),
-                  ),
+          ListenableBuilder(
+            listenable: AiLearningStore.instance,
+            builder: (context, _) {
+              final n = AiLearningStore.instance.notices.length;
+              return IconButton(
+                tooltip: 'Notifications',
+                onPressed: () {
+                  AiLearningStore.instance.bind();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                  );
+                },
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none, color: textPrimary, size: 26),
+                    if (n > 0)
+                      Positioned(
+                        right: -2,
+                        top: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            n > 9 ? '9+' : '$n',
+                            style: const TextStyle(color: Colors.white, fontSize: 10),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            },
           ),
         ],
       ),

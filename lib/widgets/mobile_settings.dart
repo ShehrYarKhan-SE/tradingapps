@@ -288,7 +288,7 @@ class MobileSettings extends StatelessWidget {
               {
                 'icon': Icons.info_outline,
                 'label': 'About Us',
-                'subtitle': 'Learn more about TradeMaster AI',
+                'subtitle': 'Learn more about Virtual Trading AI',
                 'color': const Color(0xFF8B5CF6),
                 'onTap': () {
                   // TODO: navigate to About Us screen

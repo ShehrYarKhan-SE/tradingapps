@@ -1,11 +1,11 @@
 {
-    "name": "tradingapps",
-    "short_name": "tradingapps",
+    "name": "Virtual Trading AI",
+    "short_name": "Virtual Trading AI",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#050814",
+    "theme_color": "#050814",
+    "description": "Virtual Trading AI — virtual trading, real learning.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

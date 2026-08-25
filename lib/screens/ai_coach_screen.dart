@@ -31,7 +31,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   void initState() {
     super.initState();
     final intro = widget.seed ??
-        'Hi — I am your TradeMaster coach. Ask anything about this demo account.\n\n${AiCoachService.instance.dailyBriefing()}';
+        'Hi — I am your Virtual Trading AI coach. Ask anything about this demo account.\n\n${AiCoachService.instance.dailyBriefing()}';
     _messages.add((me: false, text: intro));
     AiLearningStore.instance.markPracticed();
   }

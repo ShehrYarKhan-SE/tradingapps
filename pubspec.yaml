@@ -1,5 +1,5 @@
 name: tradingapps
-description: "A new Flutter project."
+description: "Virtual Trading AI"
 
 publish_to: 'none'
 
@@ -29,7 +29,31 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/app_icon.jpg
+  adaptive_icon_background: "#050814"
+  adaptive_icon_foreground: assets/branding/app_icon.jpg
+  web:
+    generate: true
+    image_path: assets/branding/app_icon.jpg
+    background_color: "#050814"
+    theme_color: "#050814"
+
+flutter_native_splash:
+  color: "#050814"
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+  android_12:
+    color: "#050814"
+  web: true
 

@@ -510,7 +510,7 @@ class _MobileHeaderState extends State<MobileHeader> {
               Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
               SizedBox(width: 6),
               Text(
-                "TradeMaster AI",
+                "Virtual Trading AI",
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 14,

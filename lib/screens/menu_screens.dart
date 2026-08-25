@@ -538,7 +538,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
     ),
     _Reward(
       title: 'Welcome Bonus',
-      subtitle: 'For joining TradeMaster AI',
+      subtitle: 'For joining Virtual Trading AI',
       amount: '\$50.00',
       icon: Icons.celebration,
       color: Colors.pink,

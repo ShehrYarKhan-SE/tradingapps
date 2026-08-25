@@ -519,7 +519,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icon(Icons.bolt, color: accentBlue),
             SizedBox(width: 6),
             Text(
-              "TradeMaster AI",
+              "Virtual Trading AI",
               style: TextStyle(
                 color: textPrimary,
                 fontSize: 18,

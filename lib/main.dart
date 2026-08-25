@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/trading_screen.dart';
 import 'theme_controller.dart';
 
@@ -33,11 +34,11 @@ void main() async {
     ),
   );
 
-  runApp(const TradeMasterApp());
+  runApp(const VirtualTradingApp());
 }
 
-class TradeMasterApp extends StatelessWidget {
-  const TradeMasterApp({super.key});
+class VirtualTradingApp extends StatelessWidget {
+  const VirtualTradingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class TradeMasterApp extends StatelessWidget {
       builder: (context, darkMode, child) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'TradeMaster AI',
+          title: 'Virtual Trading AI',
 
           theme: ThemeData(
             brightness: Brightness.light,
@@ -61,7 +62,7 @@ class TradeMasterApp extends StatelessWidget {
           themeMode:
           darkMode ? ThemeMode.dark : ThemeMode.light,
 
-          home: const AuthGate(),
+          home: const SplashScreen(next: AuthGate()),
         );
       },
     );

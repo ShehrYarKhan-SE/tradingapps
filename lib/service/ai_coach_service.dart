@@ -235,7 +235,7 @@ class AiCoachService {
 
   Future<String?> _freeModel(String userText, List<String> prior) async {
     final sys =
-        'You are TradeMaster AI, a friendly demo-trading coach. '
+        'You are Virtual Trading AI, a friendly demo-trading coach. '
         'Be natural, short, and useful. Never give buy/sell signals or price predictions. '
         'Say this is educational, not financial advice when talking about markets.\n\n'
         'Live demo snapshot:\n${accountContext()}';

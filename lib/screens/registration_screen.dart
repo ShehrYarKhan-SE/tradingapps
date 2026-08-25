@@ -85,6 +85,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      const Text(
+                        'Virtual Trading AI',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFB259FF),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       const Text('Register', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
                       const SizedBox(height: 6),
                       Text('Create Your Account', style: TextStyle(color: Colors.white.withOpacity(0.7))),

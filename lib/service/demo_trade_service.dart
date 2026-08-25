@@ -49,12 +49,12 @@ class DemoPosition {
       };
 
   factory DemoPosition.fromJson(Map<String, dynamic> json) => DemoPosition(
-        id: json['id'] as String,
-        symbol: json['symbol'] as String,
-        side: json['side'] as String,
-        lots: (json['lots'] as num).toDouble(),
-        openPrice: (json['openPrice'] as num).toDouble(),
-        time: DateTime.parse(json['time'] as String),
+        id: json['id']?.toString() ?? '',
+        symbol: json['symbol'] as String? ?? 'US100',
+        side: json['side'] as String? ?? 'BUY',
+        lots: (json['lots'] as num?)?.toDouble() ?? 0,
+        openPrice: (json['openPrice'] as num?)?.toDouble() ?? 0,
+        time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
         sl: (json['sl'] as num?)?.toDouble(),
         tp: (json['tp'] as num?)?.toDouble(),
       );
@@ -144,17 +144,18 @@ class DemoTrade {
       };
 
   factory DemoTrade.fromJson(Map<String, dynamic> json) => DemoTrade(
-        id: json['id'] as String,
-        symbol: json['symbol'] as String,
-        side: json['side'] as String,
-        lots: (json['lots'] as num).toDouble(),
-        openPrice: (json['openPrice'] as num).toDouble(),
-        closePrice: (json['closePrice'] as num).toDouble(),
-        pnl: (json['pnl'] as num).toDouble(),
-        time: DateTime.parse(json['time'] as String),
-        closeTime: DateTime.parse(
-          (json['closeTime'] as String?) ?? json['time'] as String,
-        ),
+        id: json['id']?.toString() ?? '',
+        symbol: json['symbol'] as String? ?? 'US100',
+        side: json['side'] as String? ?? 'BUY',
+        lots: (json['lots'] as num?)?.toDouble() ?? 0,
+        openPrice: (json['openPrice'] as num?)?.toDouble() ?? 0,
+        closePrice: (json['closePrice'] as num?)?.toDouble() ?? 0,
+        pnl: (json['pnl'] as num?)?.toDouble() ?? 0,
+        time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
+        closeTime: DateTime.tryParse(
+              (json['closeTime'] as String?) ?? json['time'] as String? ?? '',
+            ) ??
+            DateTime.now(),
         sl: (json['sl'] as num?)?.toDouble(),
         tp: (json['tp'] as num?)?.toDouble(),
         closeReason: json['closeReason'] as String? ?? 'manual',
@@ -172,6 +173,8 @@ class DemoTradeService extends ChangeNotifier {
 
   bool _ready = false;
   String? _boundUid;
+  String? _appliedUpdatedAt;
+  bool _listeningStore = false;
   double balance = startingBalance;
   final List<DemoPosition> positions = [];
   final List<DemoTrade> trades = [];
@@ -184,39 +187,49 @@ class DemoTradeService extends ChangeNotifier {
       resetMemory();
       return;
     }
-    if (_ready && _boundUid == uid) return;
-    _boundUid = uid;
-
     final store = UserAccountStore.instance;
-    if (!store.isBound || store.uid != uid) {
-      await store.bindToCurrentUser();
+    await store.bindToCurrentUser();
+    _boundUid = uid;
+    if (!_listeningStore) {
+      _listeningStore = true;
+      store.addListener(_onStore);
     }
-
-    try {
-      final map = await store.demoPayload();
-      balance = (map['balance'] as num?)?.toDouble() ?? startingBalance;
-      positions
-        ..clear()
-        ..addAll(((map['positions'] as List?) ?? []).map(
-          (e) => DemoPosition.fromJson(Map<String, dynamic>.from(e as Map)),
-        ));
-      trades
-        ..clear()
-        ..addAll(((map['trades'] as List?) ?? []).map(
-          (e) => DemoTrade.fromJson(Map<String, dynamic>.from(e as Map)),
-        ));
-    } catch (_) {
-      balance = startingBalance;
-      positions.clear();
-      trades.clear();
-    }
+    _applyFromStore(force: true);
     _ready = true;
     notifyListeners();
+  }
+
+  void _onStore() {
+    if (_boundUid == null || _boundUid != UserAccountStore.instance.uid) return;
+    _applyFromStore();
+  }
+
+  void _applyFromStore({bool force = false}) {
+    final store = UserAccountStore.instance;
+    if (!force && store.updatedAtIso == _appliedUpdatedAt) return;
+    try {
+      balance = store.demoBalance;
+      positions
+        ..clear()
+        ..addAll(store.demoPositions.map(DemoPosition.fromJson));
+      trades
+        ..clear()
+        ..addAll(store.demoTrades.map(DemoTrade.fromJson));
+      _appliedUpdatedAt = store.updatedAtIso;
+    } catch (_) {
+      if (!_ready) {
+        balance = startingBalance;
+        positions.clear();
+        trades.clear();
+      }
+    }
+    if (_ready) notifyListeners();
   }
 
   void resetMemory() {
     _ready = false;
     _boundUid = null;
+    _appliedUpdatedAt = null;
     balance = startingBalance;
     positions.clear();
     trades.clear();
@@ -435,5 +448,6 @@ class DemoTradeService extends ChangeNotifier {
       positions: positions.map((p) => p.toJson()).toList(),
       trades: trades.map((t) => t.toJson()).toList(),
     );
+    _appliedUpdatedAt = UserAccountStore.instance.updatedAtIso;
   }
 }

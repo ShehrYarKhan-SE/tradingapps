@@ -7,6 +7,7 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'demo_trade_service.dart';
 import 'user_account_store.dart';
 import 'ai_learning_store.dart';
+
 class AuthResult {
   final bool success;
   final String message;

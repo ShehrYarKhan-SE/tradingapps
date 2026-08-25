@@ -26,16 +26,24 @@ class _TradingScreenState extends State<TradingScreen> {
   String activeTab = 'home';
   String selectedSymbol = 'US100';
   final _chartKey = GlobalKey();
+  bool _booted = false;
 
   @override
   void initState() {
     super.initState();
-    DemoTradeService.instance.init();
-    UserAccountStore.instance.bindToCurrentUser();
+    _boot();
+  }
+
+  Future<void> _boot() async {
+    await UserAccountStore.instance.bindToCurrentUser();
+    await DemoTradeService.instance.init();
+    await AiLearningStore.instance.bind();
     Us100QuoteService.instance.attach();
-    AiLearningStore.instance.bind();
-    ChartWorkspace.loadSymbol().then((s) {
-      if (mounted) setState(() => selectedSymbol = s);
+    final s = await ChartWorkspace.loadSymbol();
+    if (!mounted) return;
+    setState(() {
+      selectedSymbol = s;
+      _booted = true;
     });
   }
 
@@ -159,18 +167,36 @@ class _TradingScreenState extends State<TradingScreen> {
     );
   }
 
-  Widget _keepAlive({required bool visible, required Widget child}) {
-    return Offstage(
-      offstage: !visible,
-      child: TickerMode(
-        enabled: visible,
-        child: child,
-      ),
+  Widget _chartPane({required bool isTrade}) {
+    final isChart = activeTab == 'chart';
+    return Column(
+      children: [
+        if (isTrade) const QuickTradeBar(),
+        if (isTrade) const Us100QuoteStrip(),
+        if (isChart) _chartSymbolBar(),
+        Expanded(
+          child: ChartScreen(
+            key: _chartKey,
+            visible: activeTab == 'chart' || activeTab == 'trade',
+            compact: isTrade,
+            displaySymbol: selectedSymbol,
+          ),
+        ),
+        if (isTrade) const Us100PositionsPanel(),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_booted) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF09090B),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+        ),
+      );
+    }
     final showChart = activeTab == 'chart' || activeTab == 'trade';
     final isTrade = activeTab == 'trade';
 
@@ -188,40 +214,28 @@ class _TradingScreenState extends State<TradingScreen> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _keepAlive(
-                    visible: activeTab == 'home',
-                    child: MobileHome(
-                      onTabChange: setActiveTab,
-                      onOpenChart: openChart,
+                  IgnorePointer(
+                    ignoring: !showChart,
+                    child: _chartPane(isTrade: isTrade),
+                  ),
+                  if (activeTab == 'home')
+                    ColoredBox(
+                      color: const Color(0xFF09090B),
+                      child: MobileHome(
+                        onTabChange: setActiveTab,
+                        onOpenChart: openChart,
+                      ),
                     ),
-                  ),
-                  _keepAlive(
-                    visible: activeTab == 'portfolio',
-                    child: const MobilePortfolio(),
-                  ),
-                  _keepAlive(
-                    visible: activeTab == 'settings',
-                    child: const MobileSettings(),
-                  ),
-                  _keepAlive(
-                    visible: showChart,
-                    child: Column(
-                      children: [
-                        if (isTrade) const QuickTradeBar(),
-                        if (isTrade) const Us100QuoteStrip(),
-                        if (!isTrade) _chartSymbolBar(),
-                        Expanded(
-                          child: ChartScreen(
-                            key: _chartKey,
-                            visible: showChart,
-                            compact: isTrade,
-                            displaySymbol: selectedSymbol,
-                          ),
-                        ),
-                        if (isTrade) const Us100PositionsPanel(),
-                      ],
+                  if (activeTab == 'portfolio')
+                    const ColoredBox(
+                      color: Color(0xFF09090B),
+                      child: MobilePortfolio(),
                     ),
-                  ),
+                  if (activeTab == 'settings')
+                    const ColoredBox(
+                      color: Color(0xFF09090B),
+                      child: MobileSettings(),
+                    ),
                 ],
               ),
             ),

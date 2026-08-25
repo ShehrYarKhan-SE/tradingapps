@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"tradingapp-525d6","appId":"1:978406565554:android:f8ff0e1fa4843f4ea54bab","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"tradingapp-525d6","configurations":{"android":"1:978406565554:android:f8ff0e1fa4843f4ea54bab","ios":"1:978406565554:ios:cfd1c671a145f458a54bab","web":"1:978406565554:web:db6f4cd85ed5d2eca54bab"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "tradingapp-525d6",
+          "appId": "1:978406565554:android:f8ff0e1fa4843f4ea54bab",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "tradingapp-525d6",
+          "configurations": {
+            "android": "1:978406565554:android:f8ff0e1fa4843f4ea54bab",
+            "ios": "1:978406565554:ios:cfd1c671a145f458a54bab",
+            "web": "1:978406565554:web:db6f4cd85ed5d2eca54bab"
+          }
+        }
+      }
+    }
+  }
+}

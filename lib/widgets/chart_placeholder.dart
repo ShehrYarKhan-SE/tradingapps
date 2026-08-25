@@ -6,7 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../service/chart_workspace.dart';
 import '../service/us100_quote_service.dart';
-import '../service/ai_coach_service.dart';
+import '../service/chart_scale_service.dart';
 
 class ChartScreen extends StatefulWidget {
   final bool visible;
@@ -30,7 +30,6 @@ class _ChartScreenState extends State<ChartScreen> {
   bool _immersive = false;
   bool _usedFallbackHtml = false;
   String _loadedSymbol = '';
-  bool _loadedFullTools = true;
 
   static const _desktopUa =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -118,38 +117,34 @@ class _ChartScreenState extends State<ChartScreen> {
 })();
 ''';
 
-  bool get _fullTools => !widget.compact;
+  bool get _fullTools => true;
 
   @override
   void initState() {
     super.initState();
-    _open(widget.displaySymbol, _fullTools);
+    _open(widget.displaySymbol);
   }
 
   @override
   void didUpdateWidget(ChartScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final toolsChanged = oldWidget.compact != widget.compact;
     final symbolChanged = oldWidget.displaySymbol != widget.displaySymbol;
-    if (symbolChanged || toolsChanged) {
-      _open(widget.displaySymbol, _fullTools, force: true);
+    if (symbolChanged) {
+      _open(widget.displaySymbol, force: true);
     } else if (widget.visible && !oldWidget.visible) {
       _resize();
       _injectPriceBridge();
+    } else if (oldWidget.compact != widget.compact) {
+      _resize();
     }
   }
 
-  Future<void> _open(String displaySymbol, bool fullTools,
-      {bool force = false}) async {
-    if (!force &&
-        _loadedSymbol == displaySymbol &&
-        _loadedFullTools == fullTools &&
-        _controller != null) {
+  Future<void> _open(String displaySymbol, {bool force = false}) async {
+    if (!force && _loadedSymbol == displaySymbol && _controller != null) {
       return;
     }
     _usedFallbackHtml = false;
     final interval = await ChartWorkspace.loadInterval();
-    await ChartWorkspace.saveSymbol(displaySymbol);
 
     if (_controller == null) {
       final controller = WebViewController()
@@ -165,6 +160,12 @@ class _ChartScreenState extends State<ChartScreen> {
             }
           },
         )
+        ..addJavaScriptChannel(
+          'TmScale',
+          onMessageReceived: (message) {
+            ChartScaleService.instance.ingestJson(message.message);
+          },
+        )
         ..setNavigationDelegate(
           NavigationDelegate(
             onPageFinished: (_) {
@@ -175,7 +176,7 @@ class _ChartScreenState extends State<ChartScreen> {
               if (_usedFallbackHtml) return;
               _usedFallbackHtml = true;
               _controller?.loadHtmlString(
-                _fallbackHtml(displaySymbol, interval, fullTools),
+                _fallbackHtml(displaySymbol, interval, true),
               );
             },
           ),
@@ -184,12 +185,11 @@ class _ChartScreenState extends State<ChartScreen> {
     }
 
     _loadedSymbol = displaySymbol;
-    _loadedFullTools = fullTools;
     await _controller!.loadRequest(
       ChartWorkspace.embedUri(
         displaySymbol: displaySymbol,
         interval: interval,
-        fullTools: fullTools,
+        fullTools: true,
       ),
     );
     if (mounted) setState(() => _ready = true);
@@ -274,35 +274,6 @@ class _ChartScreenState extends State<ChartScreen> {
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
-          if (!widget.compact)
-            Positioned(
-              bottom: 16,
-              left: 8,
-              child: TextButton.icon(
-                onPressed: () {
-                  final text = AiCoachService.instance.explainChart(widget.displaySymbol);
-                  showModalBottomSheet<void>(
-                    context: context,
-                    backgroundColor: const Color(0xFF141B2E),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                    ),
-                    builder: (ctx) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
-                        child: Text(
-                          text,
-                          style: const TextStyle(color: Colors.white70, height: 1.4),
-                        ),
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.auto_awesome, color: Color(0xFFC4B5FD), size: 16),
-                label: const Text('Explain this move', style: TextStyle(color: Color(0xFFC4B5FD))),
-                style: TextButton.styleFrom(backgroundColor: Colors.black54),
-              ),
-            ),
           Positioned(
             bottom: 16,
             right: 8,
@@ -312,10 +283,8 @@ class _ChartScreenState extends State<ChartScreen> {
                 _immersive ? Icons.fullscreen_exit : Icons.fullscreen,
                 color: Colors.white,
               ),
-              tooltip: "Full screen",
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black45,
-              ),
+              tooltip: 'Full screen',
+              style: IconButton.styleFrom(backgroundColor: Colors.black45),
             ),
           ),
         ],

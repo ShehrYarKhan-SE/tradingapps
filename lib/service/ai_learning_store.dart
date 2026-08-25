@@ -1,11 +1,9 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ai_coach_service.dart';
 import 'demo_trade_service.dart';
+import 'user_account_store.dart';
 
 class AiNotice {
   final String id;
@@ -152,6 +150,8 @@ class AiLearningStore extends ChangeNotifier {
   ];
 
   String? _uid;
+  String? _appliedUpdatedAt;
+  bool _listeningStore = false;
   final Set<String> completedIds = {};
   int streakDays = 0;
   String? lastActionDay;
@@ -173,26 +173,33 @@ class AiLearningStore extends ChangeNotifier {
   }
 
   Future<void> bind() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final store = UserAccountStore.instance;
+    await store.bindToCurrentUser();
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? store.uid;
     if (uid == null) {
       resetMemory();
       return;
     }
-    if (_uid == uid) {
-      _listenDemo();
-      refreshBriefing();
-      return;
-    }
     _uid = uid;
-    await _load();
+    if (!_listeningStore) {
+      _listeningStore = true;
+      store.addListener(_onStore);
+    }
+    _applyFromStore(force: true);
     _listenDemo();
     refreshBriefing();
     _onDemo();
     notifyListeners();
   }
 
+  void _onStore() {
+    if (_uid == null || _uid != UserAccountStore.instance.uid) return;
+    _applyFromStore();
+  }
+
   void resetMemory() {
     _uid = null;
+    _appliedUpdatedAt = null;
     completedIds.clear();
     streakDays = 0;
     lastActionDay = null;
@@ -309,38 +316,30 @@ class AiLearningStore extends ChangeNotifier {
   String _dayKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  String get _key => 'ai_learn_$_uid';
-
-  Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key);
-    completedIds.clear();
-    notices.clear();
-    streakDays = 0;
-    lastActionDay = null;
-    briefing = '';
-    briefingDay = null;
-    if (raw == null) return;
-    try {
-      final map = jsonDecode(raw) as Map<String, dynamic>;
-      completedIds.addAll(((map['completed'] as List?) ?? []).map((e) => e.toString()));
-      streakDays = (map['streak'] as num?)?.toInt() ?? 0;
-      lastActionDay = map['lastActionDay'] as String?;
-      briefing = map['briefing'] as String? ?? '';
-      briefingDay = map['briefingDay'] as String?;
-      notices.addAll(((map['notices'] as List?) ?? []).map(
-        (e) => AiNotice.fromJson(Map<String, dynamic>.from(e as Map)),
-      ));
-      _lastReviewTradeId = map['lastReviewTradeId'] as String?;
-    } catch (_) {}
+  void _applyFromStore({bool force = false}) {
+    final store = UserAccountStore.instance;
+    if (!force && store.updatedAtIso == _appliedUpdatedAt) return;
+    _loadFromMap(store.learning);
+    _appliedUpdatedAt = store.updatedAtIso;
   }
 
-  Future<void> _persist() async {
-    if (_uid == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _key,
-      jsonEncode({
+  void _loadFromMap(Map<String, dynamic> map) {
+    completedIds
+      ..clear()
+      ..addAll(((map['completed'] as List?) ?? []).map((e) => e.toString()));
+    streakDays = (map['streak'] as num?)?.toInt() ?? 0;
+    lastActionDay = map['lastActionDay'] as String?;
+    briefing = map['briefing'] as String? ?? '';
+    briefingDay = map['briefingDay'] as String?;
+    notices
+      ..clear()
+      ..addAll(((map['notices'] as List?) ?? []).whereType<Map>().map(
+            (e) => AiNotice.fromJson(Map<String, dynamic>.from(e)),
+          ));
+    _lastReviewTradeId = map['lastReviewTradeId'] as String?;
+  }
+
+  Map<String, dynamic> _toMap() => {
         'completed': completedIds.toList(),
         'streak': streakDays,
         'lastActionDay': lastActionDay,
@@ -348,7 +347,12 @@ class AiLearningStore extends ChangeNotifier {
         'briefingDay': briefingDay,
         'lastReviewTradeId': _lastReviewTradeId,
         'notices': notices.map((n) => n.toJson()).toList(),
-      }),
-    );
+      };
+
+  Future<void> _persist() async {
+    if (_uid == null) return;
+    UserAccountStore.instance.learning = _toMap();
+    await UserAccountStore.instance.saveAll();
+    _appliedUpdatedAt = UserAccountStore.instance.updatedAtIso;
   }
 }

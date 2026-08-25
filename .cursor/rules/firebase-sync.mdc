@@ -1,0 +1,12 @@
+---
+description: Persist all user data in Firebase; execute user requests without narration
+alwaysApply: true
+---
+
+# Firebase is the source of truth
+
+Every signed-in user's account, settings, wallet, demo balance, positions, trades, and AI learning must live in Firestore at `users/{uid}`. Data must survive app restarts and appear on any device after the same login. Do not keep source-of-truth only in memory or device-only storage.
+
+# Execution
+
+When the user asks to do something, do it. Do not explain the plan or narrate steps unless they ask.

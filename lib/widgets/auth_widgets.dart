@@ -1,188 +1,318 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
-import '../service/auth_service.dart';
 
-/// Text field used inside the Login/Register cards.
-/// Uses a floating label (like Google's "New password" field): the label
-/// sits inside the field until you tap/type, then it floats up and breaks
-/// into the border line.
-class AuthInputField extends StatelessWidget {
-  final String hint;
-  final Widget? suffixIcon;
-  final IconData icon;
-  final TextEditingController controller;
-  final bool obscureText;
-  final String? Function(String?)? validator;
+const kAuthAccent = Color(0xFF2E9BFF);
+const kAuthAccentDeep = Color(0xFF1657C9);
 
-  const AuthInputField({
+class AuthPageShell extends StatelessWidget {
+  final String backgroundAsset;
+  final Widget child;
+
+  const AuthPageShell({
     super.key,
-    required this.hint,
-    required this.icon,
-    required this.controller,
-    this.obscureText = false,
-    this.validator,
-    this.suffixIcon,
+    required this.backgroundAsset,
+    required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
-    const borderRadius = 10.0;
-    final baseBorderColor = Colors.white.withOpacity(0.15);
-    const focusedColor = Color(0xFF2E9BFF);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.25),
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: TextFormField(
-        controller: controller,
-        obscureText: obscureText,
-        validator: validator,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.white54, size: 20),
-          // labelText (instead of hintText) is what gives the floating
-          // behaviour: it sits inline until focused/filled, then floats
-          // up into the border.
-          labelText: hint,
-          floatingLabelBehavior: FloatingLabelBehavior.auto,
-          suffixIcon: suffixIcon,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          floatingLabelStyle: const TextStyle(color: focusedColor),
-          errorStyle: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
-          contentPadding:
-          const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: BorderSide(color: baseBorderColor),
+    return Scaffold(
+      backgroundColor: const Color(0xFF050814),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            backgroundAsset,
+            fit: BoxFit.cover,
+            alignment: Alignment.center,
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: BorderSide(color: baseBorderColor),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xCC050814),
+                  Color(0x66050814),
+                  Color(0xF2050814),
+                ],
+                stops: [0.0, 0.38, 1.0],
+              ),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: const BorderSide(color: focusedColor, width: 1.5),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight - 42),
+                    child: child,
+                  ),
+                );
+              },
+            ),
           ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: const BorderSide(color: Colors.orangeAccent),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
-            borderSide: const BorderSide(color: Colors.orangeAccent, width: 1.5),
-          ),
-        ),
+        ],
       ),
     );
   }
 }
 
-/// Small circular social login button (Facebook / Google / Twitter).
-class SocialCircle extends StatelessWidget {
-  final Color color;
-  final String letter;
-  final Color textColor;
-
-  const SocialCircle({
-    super.key,
-    required this.color,
-    required this.letter,
-    this.textColor = Colors.white,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 18,
-      backgroundColor: color,
-      child: Text(letter, style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
-    );
-  }
-}
-
-/// Row of the 3 social login circles with a divider label above it.
-class SocialRow extends StatelessWidget {
-  final String label;
-
-  const SocialRow({super.key, required this.label});
+class AuthBrandHeader extends StatelessWidget {
+  const AuthBrandHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 12,
-                ),
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: kAuthAccent.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.asset(
+              'assets/branding/app_icon.jpg',
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, -0.35),
             ),
-            Expanded(child: Divider(color: Colors.white.withOpacity(0.2))),
-          ],
+          ),
         ),
-
-        const SizedBox(height: 18),
-
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-
-            // Facebook
-            GestureDetector(
-              onTap: () async {
-                await AuthService.facebookLogin();
-              },
-              child: const SocialCircle(
-                color: Color(0xFF1877F2),
-                letter: 'f',
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            // Google
-            GestureDetector(
-              onTap: () async {
-                await AuthService.googleLogin();
-              },
-              child: const SocialCircle(
-                color: Colors.white,
-                letter: 'G',
-                textColor: Colors.red,
-              ),
-            ),
-
-            const SizedBox(width: 14),
-
-            // Twitter (abhi inactive)
-            const SocialCircle(
-              color: Color(0xFF1DA1F2),
-              letter: 't',
-            ),
-          ],
+        const SizedBox(height: 12),
+        const Text(
+          'Virtual Trading AI',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Learn. Practice. Master Trading.',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.72),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
   }
 }
-/// Gradient submit button used by both screens, with a loading spinner state.
+
+class AuthGlassCard extends StatelessWidget {
+  final Widget child;
+
+  const AuthGlassCard({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+          decoration: BoxDecoration(
+            color: const Color(0xD4161A22),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class AuthInputField extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final TextEditingController controller;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+  final String? errorText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onEditingComplete;
+
+  const AuthInputField({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.controller,
+    this.obscureText = false,
+    this.validator,
+    this.errorText,
+    this.suffixIcon,
+    this.keyboardType,
+    this.textInputAction,
+    this.onChanged,
+    this.onEditingComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const radius = 14.0;
+    final baseBorder = Colors.white.withValues(alpha: 0.12);
+    const errorColor = Color(0xFFFF5C5C);
+
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onChanged: onChanged,
+      onEditingComplete: onEditingComplete,
+      style: const TextStyle(color: Colors.white, fontSize: 15),
+      decoration: InputDecoration(
+        labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.auto,
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        floatingLabelStyle: const TextStyle(
+          color: kAuthAccent,
+          fontWeight: FontWeight.w600,
+        ),
+        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: const Color(0xCC0B0F16),
+        errorText: errorText,
+        errorStyle: const TextStyle(color: errorColor, fontSize: 12, height: 1.3),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: baseBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(color: baseBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: const BorderSide(color: kAuthAccent, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: const BorderSide(color: errorColor),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: const BorderSide(color: errorColor, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
 class AuthSubmitButton extends StatelessWidget {
   final String text;
-  final List<Color> gradient;
   final bool isLoading;
   final VoidCallback onTap;
+  final List<Color> gradient;
 
   const AuthSubmitButton({
     super.key,
     required this.text,
-    required this.gradient,
+    required this.isLoading,
+    required this.onTap,
+    this.gradient = const [kAuthAccent, kAuthAccentDeep],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: gradient),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: kAuthAccent.withValues(alpha: 0.32),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class AuthOrDivider extends StatelessWidget {
+  const AuthOrDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.16), thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Text(
+            'OR CONTINUE WITH',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.45),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.16), thickness: 1)),
+      ],
+    );
+  }
+}
+
+class GoogleContinueButton extends StatelessWidget {
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const GoogleContinueButton({
+    super.key,
     required this.isLoading,
     required this.onTap,
   });
@@ -193,42 +323,116 @@ class AuthSubmitButton extends StatelessWidget {
       onTap: isLoading ? null : onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 13),
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradient),
-          borderRadius: BorderRadius.circular(30),
+          color: const Color(0xFF11141B),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
         ),
-        alignment: Alignment.center,
         child: isLoading
-            ? const SizedBox(
-          height: 20,
-          width: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-        )
-            : Text(text, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+            ? const Center(
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+              )
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _GoogleMark(size: 18),
+                  SizedBox(width: 10),
+                  Text(
+                    'Continue with Google',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
 }
 
-/// Decorative diagonal streak background used behind both auth screens.
-class StreakPainter extends CustomPainter {
+class AuthSwitchRow extends StatelessWidget {
+  final String prompt;
+  final String action;
+  final VoidCallback onTap;
+
+  const AuthSwitchRow({
+    super.key,
+    required this.prompt,
+    required this.action,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          '$prompt ',
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13.5),
+        ),
+        GestureDetector(
+          onTap: onTap,
+          child: Text(
+            action,
+            style: const TextStyle(
+              color: kAuthAccent,
+              fontWeight: FontWeight.w800,
+              fontSize: 13.5,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GoogleMark extends StatelessWidget {
+  final double size;
+
+  const _GoogleMark({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _GoogleGPainter()),
+    );
+  }
+}
+
+class _GoogleGPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final leftPaint = Paint()
-      ..color = const Color(0xFF2E9BFF).withOpacity(0.15)
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    final rightPaint = Paint()
-      ..color = const Color(0xFFB259FF).withOpacity(0.15)
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
+    final stroke = size.width * 0.18;
+    final rect = Offset(stroke / 2, stroke / 2) & Size(size.width - stroke, size.height - stroke);
+    final sweep = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
 
-    for (int i = 0; i < 6; i++) {
-      final y = size.height * 0.15 + i * 40.0;
-      canvas.drawLine(Offset(-40, y + 60), Offset(140, y), leftPaint);
-      canvas.drawLine(Offset(size.width - 140, y), Offset(size.width + 40, y + 60), rightPaint);
-    }
+    sweep.color = const Color(0xFFEA4335);
+    canvas.drawArc(rect, -1.15, 1.55, false, sweep);
+    sweep.color = const Color(0xFFFBBC05);
+    canvas.drawArc(rect, 0.40, 1.15, false, sweep);
+    sweep.color = const Color(0xFF34A853);
+    canvas.drawArc(rect, 1.55, 1.15, false, sweep);
+    sweep.color = const Color(0xFF4285F4);
+    canvas.drawArc(rect, 2.70, 1.55, false, sweep);
+
+    final bar = Paint()..color = const Color(0xFF4285F4);
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * 0.48, size.height * 0.42, size.width * 0.40, stroke),
+      bar,
+    );
   }
 
   @override

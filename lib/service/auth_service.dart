@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
@@ -12,40 +13,80 @@ class AuthResult {
   final bool success;
   final String message;
   final User? user;
+  final String? code;
 
   AuthResult({
     required this.success,
     required this.message,
     this.user,
+    this.code,
   });
 }
 
 class AuthService {
-  static Future<UserCredential?> googleLogin() async {
+  static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: const ['email', 'profile'],
+  );
+
+  static Future<AuthResult> googleLogin() async {
     try {
-      final GoogleSignInAccount? googleUser =
-      await GoogleSignIn().signIn();
-
-      if (googleUser == null) {
-        return null;
+      final UserCredential cred;
+      if (kIsWeb) {
+        final provider = GoogleAuthProvider()
+          ..addScope('email')
+          ..addScope('profile');
+        cred = await FirebaseAuth.instance.signInWithPopup(provider);
+      } else {
+        final googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) {
+          return AuthResult(success: false, message: '');
+        }
+        final googleAuth = await googleUser.authentication;
+        cred = await FirebaseAuth.instance.signInWithCredential(
+          GoogleAuthProvider.credential(
+            accessToken: googleAuth.accessToken,
+            idToken: googleAuth.idToken,
+          ),
+        );
       }
-
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final cred = await FirebaseAuth.instance
-          .signInWithCredential(credential);
       unawaited(_hydrateSession());
-      return cred;
-
+      return AuthResult(
+        success: true,
+        message: 'Login Successful',
+        user: cred.user,
+      );
+    } on FirebaseAuthException catch (e) {
+      return AuthResult(
+        success: false,
+        message: e.message ?? 'Google sign-in failed',
+      );
     } catch (e) {
-      print("Google Login Error: $e");
-      return null;
+      final raw = e.toString();
+      if (raw.contains('sign_in_canceled') || raw.contains('popup_closed')) {
+        return AuthResult(success: false, message: '');
+      }
+      if (raw.contains('ApiException: 10') || raw.contains('DEVELOPER_ERROR')) {
+        return AuthResult(
+          success: false,
+          message: 'Google sign-in is not configured for this Android build yet.',
+        );
+      }
+      return AuthResult(success: false, message: 'Google sign-in failed');
+    }
+  }
+
+  static Future<AuthResult> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return AuthResult(
+        success: true,
+        message: 'Reset link sent to ${email.trim()}',
+      );
+    } on FirebaseAuthException catch (e) {
+      return AuthResult(
+        success: false,
+        message: e.message ?? 'Could not send reset email',
+      );
     }
   }
   static Future<UserCredential?> facebookLogin() async {
@@ -124,6 +165,7 @@ class AuthService {
       return AuthResult(
         success: false,
         message: e.message ?? "Login Failed",
+        code: e.code,
       );
     }
   }
@@ -134,7 +176,7 @@ class AuthService {
     UserAccountStore.instance.resetMemory();
     AiLearningStore.instance.resetMemory();
     try {
-      await GoogleSignIn().signOut();
+      await _googleSignIn.signOut();
     } catch (_) {}
     try {
       await FacebookAuth.instance.logOut();

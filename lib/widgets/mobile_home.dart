@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/ai_coach_screen.dart';
 import '../screens/learning_path_screen.dart';
 import '../screens/profile_screen.dart';
 import '../service/ai_coach_service.dart';
@@ -233,14 +232,7 @@ class MobileHome extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AiCoachScreen(),
-                                ),
-                              );
-                            },
+                            onTap: () => onTabChange('coach'),
                             child: _buildCardButton(
                               'AI Coach',
                               Icons.smart_toy_outlined,
@@ -345,14 +337,7 @@ class MobileHome extends StatelessWidget {
                     ? AiCoachService.instance.dailyBriefing()
                     : AiLearningStore.instance.briefing;
                 return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => AiCoachScreen(seed: text),
-                      ),
-                    );
-                  },
+                  onTap: () => onTabChange('coach'),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -397,12 +382,7 @@ class MobileHome extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AiCoachScreen()),
-                );
-              },
+              onTap: () => onTabChange('coach'),
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

@@ -13,6 +13,7 @@ import '../service/us100_quote_service.dart';
 import '../service/user_account_store.dart';
 import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
+import 'ai_coach_screen.dart';
 
 class TradingScreen extends StatefulWidget {
   const TradingScreen({super.key});
@@ -226,6 +227,13 @@ class _TradingScreenState extends State<TradingScreen> {
                         onOpenChart: openChart,
                       ),
                     ),
+                  Offstage(
+                    offstage: activeTab != 'coach',
+                    child: TickerMode(
+                      enabled: activeTab == 'coach',
+                      child: const AiCoachScreen(embedded: true),
+                    ),
+                  ),
                   if (activeTab == 'portfolio')
                     const ColoredBox(
                       color: Color(0xFF09090B),

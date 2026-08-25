@@ -33,11 +33,11 @@ class AuthPageShell extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xCC050814),
-                  Color(0x66050814),
-                  Color(0xF2050814),
+                  Color(0x73050814),
+                  Color(0x1A050814),
+                  Color(0x8F050814),
                 ],
-                stops: [0.0, 0.38, 1.0],
+                stops: [0.0, 0.42, 1.0],
               ),
             ),
           ),
@@ -123,14 +123,21 @@ class AuthGlassCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+        filter: ImageFilter.blur(sigmaX: 48, sigmaY: 48),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
           decoration: BoxDecoration(
-            color: const Color(0xD4161A22),
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -193,7 +200,7 @@ class AuthInputField extends StatelessWidget {
         prefixIcon: Icon(icon, color: Colors.white54, size: 20),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: const Color(0xCC0B0F16),
+        fillColor: Colors.white.withValues(alpha: 0.08),
         errorText: errorText,
         errorStyle: const TextStyle(color: errorColor, fontSize: 12, height: 1.3),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),

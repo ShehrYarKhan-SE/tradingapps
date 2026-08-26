@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/learning_path_screen.dart';
 import '../screens/profile_screen.dart';
+import '../screens/smc_library_screen.dart';
+import '../screens/learning_path_screen.dart';
 import '../service/ai_learning_store.dart';
 import '../service/home_trending_quotes.dart';
 import '../service/user_account_store.dart';
@@ -242,7 +243,6 @@ class MobileHome extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // ---------------- Learning Progress + Daily Streak ----------------
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: ListenableBuilder(
@@ -253,14 +253,30 @@ class MobileHome extends StatelessWidget {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => _openLearning(context),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SmcLibraryScreen(),
+                            ),
+                          );
+                        },
                         child: _buildLearningProgressCard(),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => _openLearning(context),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LearningPathScreen(
+                                onPracticeTrade: () => onTabChange('trade'),
+                              ),
+                            ),
+                          );
+                        },
                         child: _buildDailyStreakCard(),
                       ),
                     ),
@@ -270,17 +286,6 @@ class MobileHome extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _openLearning(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => LearningPathScreen(
-          onPracticeTrade: () => onTabChange('trade'),
-        ),
       ),
     );
   }

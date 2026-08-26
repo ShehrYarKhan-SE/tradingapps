@@ -31,6 +31,8 @@ class ChartWorkspace {
   static Future<String> loadSymbol() async {
     final saved = UserAccountStore.instance.chartSymbol;
     if (tvSymbols.containsKey(saved)) return saved;
+    final fallback = UserAccountStore.instance.defaultMarket;
+    if (tvSymbols.containsKey(fallback)) return fallback;
     return defaultDisplaySymbol;
   }
 

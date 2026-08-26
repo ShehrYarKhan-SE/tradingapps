@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../service/demo_trade_service.dart';
@@ -56,7 +57,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: _accent),
-            onPressed: () {
+            onPressed: () async {
               if (newCtrl.text.isEmpty || newCtrl.text.length < 6) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Password must be at least 6 characters')),
@@ -69,10 +70,34 @@ class _SecurityScreenState extends State<SecurityScreen> {
                 );
                 return;
               }
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Password updated successfully')),
-              );
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user == null || user.email == null) {
+                  throw FirebaseAuthException(code: 'requires-recent-login');
+                }
+                final cred = EmailAuthProvider.credential(
+                  email: user.email!,
+                  password: currentCtrl.text,
+                );
+                await user.reauthenticateWithCredential(cred);
+                await user.updatePassword(newCtrl.text);
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Password updated successfully')),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      e is FirebaseAuthException
+                          ? (e.message ?? 'Could not update password')
+                          : 'Could not update password',
+                    ),
+                  ),
+                );
+              }
             },
             child: const Text('Update'),
           ),
@@ -819,8 +844,9 @@ class HelpCenterScreen extends StatelessWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Opening live chat...')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ContactUsScreen()),
                       );
                     },
                     child: Padding(
@@ -844,8 +870,9 @@ class HelpCenterScreen extends StatelessWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Opening email support...')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ContactUsScreen()),
                       );
                     },
                     child: Padding(
@@ -894,6 +921,389 @@ class HelpCenterScreen extends StatelessWidget {
               ),
             ),
           )),
+        ],
+      ),
+    );
+  }
+}
+
+class LoginActivityScreen extends StatelessWidget {
+  const LoginActivityScreen({super.key});
+
+  static const _bg = Color(0xFF0D0D0F);
+  static const _card = Color(0xFF1A1A1F);
+
+  String _ago(DateTime time) {
+    final d = DateTime.now().difference(time);
+    if (d.inMinutes < 1) return 'Just now';
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    return '${d.inDays}d ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        title: const Text('Login Activity', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: ListenableBuilder(
+        listenable: UserAccountStore.instance,
+        builder: (context, _) {
+          final items = UserAccountStore.instance.loginHistory;
+          if (items.isEmpty) {
+            return const Center(
+              child: Text(
+                'No sign-ins recorded yet',
+                style: TextStyle(color: Colors.white54),
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, i) {
+              final e = items[i];
+              return Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.06)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.login, color: Color(0xFF3B82F6)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e.device,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '${e.time.year}-${e.time.month.toString().padLeft(2, '0')}-${e.time.day.toString().padLeft(2, '0')}  ${e.time.hour.toString().padLeft(2, '0')}:${e.time.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      _ago(e.time),
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class DevicesScreen extends StatelessWidget {
+  const DevicesScreen({super.key});
+
+  static const _bg = Color(0xFF0D0D0F);
+  static const _card = Color(0xFF1A1A1F);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        title: const Text('Devices', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: ListenableBuilder(
+        listenable: UserAccountStore.instance,
+        builder: (context, _) {
+          final store = UserAccountStore.instance;
+          final items = store.devices;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              if (items.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: Center(
+                    child: Text(
+                      'No devices linked yet',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                ),
+              ...items.map((d) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: _card,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.smartphone, color: Color(0xFF8B5CF6)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              d.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Last active ${_fmt(d.lastActive)}',
+                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              if (items.length > 1) ...[
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () async {
+                    await store.removeOtherDevices();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Other devices removed')),
+                    );
+                  },
+                  child: const Text('Sign out other devices'),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  static String _fmt(DateTime t) {
+    return '${t.year}-${t.month.toString().padLeft(2, '0')}-${t.day.toString().padLeft(2, '0')}';
+  }
+}
+
+class ContactUsScreen extends StatefulWidget {
+  const ContactUsScreen({super.key});
+
+  @override
+  State<ContactUsScreen> createState() => _ContactUsScreenState();
+}
+
+class _ContactUsScreenState extends State<ContactUsScreen> {
+  final _subject = TextEditingController();
+  final _message = TextEditingController();
+  bool _sending = false;
+
+  static const _bg = Color(0xFF0D0D0F);
+  static const _card = Color(0xFF1A1A1F);
+
+  @override
+  void dispose() {
+    _subject.dispose();
+    _message.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final subject = _subject.text.trim();
+    final message = _message.text.trim();
+    if (subject.isEmpty || message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a subject and message')),
+      );
+      return;
+    }
+    setState(() => _sending = true);
+    await UserAccountStore.instance.addSupportTicket(subject, message);
+    if (!mounted) return;
+    setState(() => _sending = false);
+    _subject.clear();
+    _message.clear();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message saved to your account')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        title: const Text('Contact Us', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: ListenableBuilder(
+        listenable: UserAccountStore.instance,
+        builder: (context, _) {
+          final tickets = UserAccountStore.instance.supportTickets;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _card,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _subject,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Subject',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _message,
+                      minLines: 4,
+                      maxLines: 6,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'How can we help?',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _sending ? null : _send,
+                        child: Text(_sending ? 'Sending…' : 'Send message'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (tickets.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'YOUR MESSAGES',
+                  style: TextStyle(
+                    color: Colors.grey[500],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...tickets.map((t) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: _card,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t['subject']?.toString() ?? 'Message',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          t['message']?.toString() ?? '',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class AboutUsScreen extends StatelessWidget {
+  const AboutUsScreen({super.key});
+
+  static const _bg = Color(0xFF0D0D0F);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: _bg,
+        elevation: 0,
+        title: const Text('About Us', style: TextStyle(color: Colors.white)),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: const [
+          Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 48),
+          SizedBox(height: 12),
+          Text(
+            'Virtual Trading AI',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Version 1.0.0',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white54),
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Practice demo trading with a live US100 chart, a virtual wallet, and an AI coach. '
+            'This app is educational only — it is not a broker and it does not give financial advice.',
+            style: TextStyle(color: Colors.white70, height: 1.45, fontSize: 14),
+          ),
         ],
       ),
     );

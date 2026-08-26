@@ -18,6 +18,13 @@ class RiskVerdict {
   });
 }
 
+class CoachTurn {
+  final bool me;
+  final String text;
+
+  const CoachTurn({required this.me, required this.text});
+}
+
 /// Context-aware coach for the demo account.
 /// Educational only — never a buy/sell signal.
 class AiCoachService {
@@ -222,59 +229,67 @@ class AiCoachService {
     );
   }
 
-  /// Free cloud model (Pollinations, no API key). Falls back to on-device coach.
-  Future<String> ask(String raw, {List<String> prior = const []}) async {
+  /// Live anonymous model (no API key, no account, no invoices).
+  Future<String> ask(
+    String raw, {
+    List<String> prior = const [],
+    List<CoachTurn> history = const [],
+  }) async {
     final local = reply(raw);
     if (_isPriceCall(raw.toLowerCase())) return local;
+    final turns = history.isNotEmpty
+        ? history
+        : prior.map((t) => CoachTurn(me: true, text: t)).toList();
     try {
-      final remote = await _freeModel(raw, prior).timeout(const Duration(seconds: 22));
+      final sys =
+          'You are Virtual Trading AI, a friendly demo-trading coach inside a practice app. '
+          'Be natural, short, and useful (2–8 sentences). Never give buy/sell signals, '
+          'price targets, or guaranteed outcomes. This is educational, not financial advice.\n\n'
+          'Live demo snapshot:\n${accountContext()}';
+      final remote = await _pollinationsFree(sys, raw, turns)
+          .timeout(const Duration(seconds: 32));
       if (remote != null && remote.trim().length > 8) return remote.trim();
     } catch (_) {}
     return local;
   }
 
-  Future<String?> _freeModel(String userText, List<String> prior) async {
-    final sys =
-        'You are Virtual Trading AI, a friendly demo-trading coach. '
-        'Be natural, short, and useful. Never give buy/sell signals or price predictions. '
-        'Say this is educational, not financial advice when talking about markets.\n\n'
-        'Live demo snapshot:\n${accountContext()}';
+  /// Public anonymous model — no key is sent. Skip HTTP 402.
+  Future<String?> _pollinationsFree(
+    String sys,
+    String userText,
+    List<CoachTurn> history,
+  ) async {
     final messages = <Map<String, String>>[
       {'role': 'system', 'content': sys},
     ];
-    for (final line in prior.take(8)) {
-      messages.add({'role': 'user', 'content': line});
+    for (final t in history.take(8)) {
+      messages.add({
+        'role': t.me ? 'user' : 'assistant',
+        'content': t.text,
+      });
     }
     messages.add({'role': 'user', 'content': userText});
 
-    final payload = jsonEncode({
-      'model': 'openai',
-      'messages': messages,
-    });
-
-    final post = await http
-        .post(
-          Uri.parse('https://text.pollinations.ai/openai'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json, text/plain',
-          },
-          body: payload,
-        )
-        .timeout(const Duration(seconds: 18));
-    final parsed = _parseModelBody(post.body);
-    if (post.statusCode == 200 && parsed != null) return parsed;
-
-    final q = Uri.encodeComponent(
-      '$sys\n\nUser: $userText\nReply in 2-6 short sentences.',
-    );
-    final get = await http
-        .get(Uri.parse('https://text.pollinations.ai/$q'))
-        .timeout(const Duration(seconds: 18));
-    if (get.statusCode == 200 && get.body.trim().length > 8) {
-      return get.body.trim();
-    }
-    return parsed;
+    try {
+      final post = await http
+          .post(
+            Uri.parse('https://text.pollinations.ai/openai'),
+            headers: const {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json, text/plain',
+              'Referer': 'https://tradingapp-525d6.firebaseapp.com/',
+            },
+            body: jsonEncode({
+              'model': 'openai-fast',
+              'messages': messages,
+            }),
+          )
+          .timeout(const Duration(seconds: 20));
+      if (post.statusCode == 402) return null;
+      final parsed = _parseModelBody(post.body);
+      if (post.statusCode == 200 && parsed != null) return parsed;
+    } catch (_) {}
+    return null;
   }
 
   String? _parseModelBody(String body) {
@@ -283,21 +298,58 @@ class AiCoachService {
     try {
       final json = jsonDecode(t);
       if (json is Map) {
+        if (json['error'] != null || json['status'] == 402) return null;
         final choices = json['choices'];
         if (choices is List && choices.isNotEmpty) {
           final msg = (choices.first as Map)['message'];
           if (msg is Map) {
-            final c = msg['content']?.toString();
-            if (c != null && c.trim().isNotEmpty) return c;
+            final fromContent = _textFromOpenAiContent(msg['content']);
+            if (fromContent != null) return fromContent;
+            final reasoning = msg['reasoning']?.toString() ??
+                msg['reasoning_content']?.toString();
+            final cleaned = _cleanModelText(reasoning ?? '');
+            if (cleaned != null) return cleaned;
           }
         }
         final inner = json['text']?.toString() ?? json['response']?.toString();
-        if (inner != null && inner.trim().isNotEmpty) return inner;
+        return _cleanModelText(inner ?? '');
       }
     } catch (_) {
-      if (!t.startsWith('{') && t.length > 8) return t;
+      return _cleanModelText(t.startsWith('{') ? '' : t);
     }
     return null;
+  }
+
+  String? _textFromOpenAiContent(dynamic content) {
+    if (content is String) return _cleanModelText(content);
+    if (content is List) {
+      final buf = StringBuffer();
+      for (final p in content) {
+        if (p is String) {
+          buf.write(p);
+        } else if (p is Map) {
+          final type = p['type']?.toString();
+          if (type == 'reasoning' || type == 'thought') continue;
+          final t = p['text']?.toString() ?? p['content']?.toString();
+          if (t != null) buf.write(t);
+        }
+      }
+      return _cleanModelText(buf.toString());
+    }
+    return null;
+  }
+
+  String? _cleanModelText(String raw) {
+    var t = raw.trim();
+    if (t.isEmpty) return null;
+    t = t.replaceAll(
+      RegExp(r'<think>[\s\S]*?</think>', caseSensitive: false),
+      '',
+    );
+    t = t.trim();
+    if (t.length < 9) return null;
+    if (t.toLowerCase().contains('payment required')) return null;
+    return t;
   }
 
   String reply(String raw) {

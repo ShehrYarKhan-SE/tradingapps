@@ -36,6 +36,49 @@ class WalletActivity {
       );
 }
 
+class LoginRecord {
+  final String device;
+  final DateTime time;
+
+  const LoginRecord({required this.device, required this.time});
+
+  Map<String, dynamic> toJson() => {
+        'device': device,
+        'time': time.toIso8601String(),
+      };
+
+  factory LoginRecord.fromJson(Map<String, dynamic> json) => LoginRecord(
+        device: json['device'] as String? ?? 'Unknown device',
+        time: DateTime.tryParse(json['time'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
+class LinkedDevice {
+  final String id;
+  final String name;
+  final DateTime lastActive;
+
+  const LinkedDevice({
+    required this.id,
+    required this.name,
+    required this.lastActive,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'lastActive': lastActive.toIso8601String(),
+      };
+
+  factory LinkedDevice.fromJson(Map<String, dynamic> json) => LinkedDevice(
+        id: json['id'] as String? ?? '',
+        name: json['name'] as String? ?? 'Device',
+        lastActive:
+            DateTime.tryParse(json['lastActive'] as String? ?? '') ??
+            DateTime.now(),
+      );
+}
+
 /// Cloud source of truth for one signed-in account (`users/{uid}`).
 class UserAccountStore extends ChangeNotifier {
   UserAccountStore._();
@@ -56,6 +99,7 @@ class UserAccountStore extends ChangeNotifier {
   String plan = 'Demo Pro Plan';
   String chartInterval = '15';
   String chartSymbol = 'US100';
+  String phone = '';
   bool darkMode = true;
   bool twoFAEnabled = false;
   bool biometricEnabled = true;
@@ -63,6 +107,9 @@ class UserAccountStore extends ChangeNotifier {
   String? profileImagePath;
   String? profileImageUrl;
   final List<WalletActivity> walletActivity = [];
+  final List<LoginRecord> loginHistory = [];
+  final List<LinkedDevice> devices = [];
+  final List<Map<String, dynamic>> supportTickets = [];
 
   double demoBalance = 10000;
   List<Map<String, dynamic>> demoPositions = [];
@@ -119,6 +166,7 @@ class UserAccountStore extends ChangeNotifier {
     notifyListeners();
     await _syncCloud();
     _listenCloud();
+    await recordThisDevice();
     isDarkMode.value = darkMode;
     notifyListeners();
   }
@@ -219,6 +267,7 @@ class UserAccountStore extends ChangeNotifier {
     plan = 'Demo Pro Plan';
     chartInterval = '15';
     chartSymbol = 'US100';
+    phone = '';
     darkMode = true;
     twoFAEnabled = false;
     biometricEnabled = true;
@@ -226,6 +275,9 @@ class UserAccountStore extends ChangeNotifier {
     profileImagePath = null;
     profileImageUrl = null;
     walletActivity.clear();
+    loginHistory.clear();
+    devices.clear();
+    supportTickets.clear();
     demoBalance = 10000;
     demoPositions = [];
     demoTrades = [];
@@ -245,6 +297,7 @@ class UserAccountStore extends ChangeNotifier {
     plan = data['plan'] as String? ?? plan;
     chartInterval = data['chartInterval'] as String? ?? chartInterval;
     chartSymbol = data['chartSymbol'] as String? ?? chartSymbol;
+    phone = data['phone'] as String? ?? phone;
     darkMode = data['darkMode'] as bool? ?? darkMode;
     twoFAEnabled = data['twoFAEnabled'] as bool? ?? twoFAEnabled;
     biometricEnabled = data['biometricEnabled'] as bool? ?? biometricEnabled;
@@ -254,6 +307,15 @@ class UserAccountStore extends ChangeNotifier {
     walletActivity
       ..clear()
       ..addAll(_mapList(data['walletActivity']).map(WalletActivity.fromJson));
+    loginHistory
+      ..clear()
+      ..addAll(_mapList(data['loginHistory']).map(LoginRecord.fromJson));
+    devices
+      ..clear()
+      ..addAll(_mapList(data['devices']).map(LinkedDevice.fromJson));
+    supportTickets
+      ..clear()
+      ..addAll(_mapList(data['supportTickets']));
     demoBalance = (data['demoBalance'] as num?)?.toDouble() ?? demoBalance;
     demoPositions = _mapList(data['positions']);
     demoTrades = _mapList(data['trades']);
@@ -392,6 +454,7 @@ class UserAccountStore extends ChangeNotifier {
       'plan': plan,
       'chartInterval': chartInterval,
       'chartSymbol': chartSymbol,
+      'phone': phone,
       'darkMode': darkMode,
       'twoFAEnabled': twoFAEnabled,
       'biometricEnabled': biometricEnabled,
@@ -402,6 +465,9 @@ class UserAccountStore extends ChangeNotifier {
       'positions': positions,
       'trades': trades,
       'walletActivity': walletActivity.map((e) => e.toJson()).toList(),
+      'loginHistory': loginHistory.map((e) => e.toJson()).toList(),
+      'devices': devices.map((e) => e.toJson()).toList(),
+      'supportTickets': supportTickets,
       'learning': learning,
       'chartDrawings': chartDrawings,
       'updatedAt': DateTime.now().toIso8601String(),
@@ -481,6 +547,72 @@ class UserAccountStore extends ChangeNotifier {
     if (walletActivity.length > 50) {
       walletActivity.removeRange(50, walletActivity.length);
     }
+  }
+
+  static String deviceLabel() {
+    if (kIsWeb) return 'Web browser';
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'Android phone';
+      case TargetPlatform.iOS:
+        return 'iPhone';
+      case TargetPlatform.windows:
+        return 'Windows PC';
+      case TargetPlatform.macOS:
+        return 'Mac';
+      default:
+        return 'This device';
+    }
+  }
+
+  Future<String> _localDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    var id = prefs.getString('device_id');
+    if (id == null || id.isEmpty) {
+      id = 'd_${DateTime.now().millisecondsSinceEpoch}';
+      await prefs.setString('device_id', id);
+    }
+    return id;
+  }
+
+  Future<void> recordThisDevice() async {
+    final id = await _localDeviceId();
+    final name = deviceLabel();
+    final now = DateTime.now();
+    final idx = devices.indexWhere((d) => d.id == id);
+    if (idx >= 0) {
+      devices[idx] = LinkedDevice(id: id, name: name, lastActive: now);
+    } else {
+      devices.insert(0, LinkedDevice(id: id, name: name, lastActive: now));
+    }
+    final last = loginHistory.isEmpty ? null : loginHistory.first;
+    if (last == null || now.difference(last.time).inMinutes >= 10) {
+      loginHistory.insert(0, LoginRecord(device: name, time: now));
+      if (loginHistory.length > 30) {
+        loginHistory.removeRange(30, loginHistory.length);
+      }
+    }
+    if (devices.length > 12) devices.removeRange(12, devices.length);
+    await saveAll();
+  }
+
+  Future<void> removeOtherDevices() async {
+    final id = await _localDeviceId();
+    devices.removeWhere((d) => d.id != id);
+    await saveAll();
+  }
+
+  Future<void> addSupportTicket(String subject, String message) async {
+    supportTickets.insert(0, {
+      'subject': subject,
+      'message': message,
+      'time': DateTime.now().toIso8601String(),
+      'status': 'open',
+    });
+    if (supportTickets.length > 20) {
+      supportTickets.removeRange(20, supportTickets.length);
+    }
+    await saveAll();
   }
 
   Future<void> deleteCloudData() async {

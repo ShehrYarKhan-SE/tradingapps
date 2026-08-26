@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../service/auth_service.dart';
 import '../service/ai_learning_store.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/profile_screen.dart';
 import '../screens/Notification_Screen.dart';
 import '../screens/menu_screens.dart';
+import '../screens/profile_screen.dart';
 import 'mobile_settings.dart';
 
 class MobileHeader extends StatefulWidget {
@@ -116,7 +116,7 @@ class _MobileHeaderState extends State<MobileHeader> {
                   title: const Text("Settings", style: TextStyle(color: Colors.white)),
                   iconTheme: const IconThemeData(color: Colors.white),
                 ),
-                body: const MobileSettings(),
+                body: const MobileSettings(showTitle: false),
               ),
             ),
           );

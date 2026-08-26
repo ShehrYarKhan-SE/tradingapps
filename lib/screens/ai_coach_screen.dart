@@ -41,7 +41,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   void initState() {
     super.initState();
     final intro = widget.seed ??
-        'Hi — I am your Virtual Trading AI coach. Ask anything about this demo account.\n\n${AiCoachService.instance.dailyBriefing()}';
+        'Hi — I am your live Virtual Trading AI coach. Ask anything about this demo account.\n\n${AiCoachService.instance.dailyBriefing()}';
     _messages.add(_ChatMsg(me: false, text: intro, time: DateTime.now()));
     AiLearningStore.instance.markPracticed();
   }
@@ -86,10 +86,12 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     _scrollToEnd();
     AiLearningStore.instance.markPracticed();
 
-    final prior = _messages.where((m) => m.me).map((m) => m.text).toList();
-    if (prior.isNotEmpty) prior.removeLast();
+    final history = [
+      for (final m in _messages) CoachTurn(me: m.me, text: m.text),
+    ];
+    if (history.isNotEmpty && history.last.me) history.removeLast();
 
-    final answer = await AiCoachService.instance.ask(text, prior: prior);
+    final answer = await AiCoachService.instance.ask(text, history: history);
     if (!mounted) return;
     setState(() {
       _messages.add(_ChatMsg(me: false, text: answer, time: DateTime.now()));
@@ -157,16 +159,6 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                           title: 'Teach Me Trading',
                           subtitle: 'ICT / SMC topics, one at a time.',
                           onTap: _openSmcLibrary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.assignment_rounded,
-                          color: const Color(0xFFFBBF24),
-                          title: 'Analyze My Trade',
-                          subtitle: 'Review your demo trades & improve.',
-                          onTap: _busy ? null : () => _send('Review my last trade'),
                         ),
                       ),
                       const SizedBox(width: 8),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
 import 'smc_library_screen.dart';
+import 'smc_quiz_library_screen.dart';
 
 const _kNavy = Color(0xFF07061A);
 const _kGlass = Color(0x99101838);
@@ -71,6 +72,12 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
       _openSmcLibrary();
       return;
     }
+    if (lower.contains('quiz') ||
+        lower.contains('quize') ||
+        lower.contains('practice tips')) {
+      _openQuiz();
+      return;
+    }
     setState(() {
       _messages.add(_ChatMsg(me: true, text: text, time: DateTime.now()));
       _busy = true;
@@ -95,6 +102,13 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SmcLibraryScreen()),
+    );
+  }
+
+  void _openQuiz() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SmcQuizLibraryScreen()),
     );
   }
 
@@ -158,11 +172,11 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _QuickAction(
-                          icon: Icons.lightbulb_rounded,
+                          icon: Icons.quiz_rounded,
                           color: const Color(0xFFC084FC),
-                          title: 'Practice Tips',
-                          subtitle: 'Smart tips before you trade.',
-                          onTap: _busy ? null : () => _send('Give me smart tips before I trade'),
+                          title: 'Quiz',
+                          subtitle: 'US100 replay — Buy or Sell.',
+                          onTap: _openQuiz,
                         ),
                       ),
                     ],

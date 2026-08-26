@@ -154,6 +154,8 @@ class AiLearningStore extends ChangeNotifier {
   bool _listeningStore = false;
   final Set<String> completedIds = {};
   final Set<String> smcReadIds = {};
+  final Map<String, int> _quizPlays = {};
+  final Map<String, int> _quizWins = {};
   int streakDays = 0;
   String? lastActionDay;
   String briefing = '';
@@ -165,6 +167,11 @@ class AiLearningStore extends ChangeNotifier {
   int get completedCount => completedIds.length;
   int get totalLessons => lessons.length;
   double get progress => totalLessons == 0 ? 0 : completedCount / totalLessons;
+  int get smcQuizPlays => _quizPlays.values.fold(0, (a, b) => a + b);
+  int get smcQuizWins => _quizWins.values.fold(0, (a, b) => a + b);
+
+  int quizPlays(String id) => _quizPlays[id] ?? 0;
+  int quizWins(String id) => _quizWins[id] ?? 0;
 
   LessonItem? get nextLesson {
     for (final l in lessons) {
@@ -203,6 +210,8 @@ class AiLearningStore extends ChangeNotifier {
     _appliedUpdatedAt = null;
     completedIds.clear();
     smcReadIds.clear();
+    _quizPlays.clear();
+    _quizWins.clear();
     streakDays = 0;
     lastActionDay = null;
     briefing = '';
@@ -263,6 +272,13 @@ class AiLearningStore extends ChangeNotifier {
     }
     _persist();
     notifyListeners();
+  }
+
+  Future<void> recordQuiz(String id, bool won) async {
+    if (id.isEmpty) return;
+    _quizPlays[id] = quizPlays(id) + 1;
+    if (won) _quizWins[id] = quizWins(id) + 1;
+    markPracticed();
   }
 
   Future<void> markSmcRead(String id) async {
@@ -338,6 +354,18 @@ class AiLearningStore extends ChangeNotifier {
     smcReadIds
       ..clear()
       ..addAll(((map['smcRead'] as List?) ?? []).map((e) => e.toString()));
+    _quizPlays.clear();
+    _quizWins.clear();
+    final rawQuiz = map['smcQuiz'];
+    if (rawQuiz is Map) {
+      for (final e in rawQuiz.entries) {
+        final v = e.value;
+        if (v is Map) {
+          _quizPlays[e.key.toString()] = (v['plays'] as num?)?.toInt() ?? 0;
+          _quizWins[e.key.toString()] = (v['wins'] as num?)?.toInt() ?? 0;
+        }
+      }
+    }
     streakDays = (map['streak'] as num?)?.toInt() ?? 0;
     lastActionDay = map['lastActionDay'] as String?;
     briefing = map['briefing'] as String? ?? '';
@@ -353,6 +381,10 @@ class AiLearningStore extends ChangeNotifier {
   Map<String, dynamic> _toMap() => {
         'completed': completedIds.toList(),
         'smcRead': smcReadIds.toList(),
+        'smcQuiz': {
+          for (final id in {..._quizPlays.keys, ..._quizWins.keys})
+            id: {'plays': quizPlays(id), 'wins': quizWins(id)},
+        },
         'streak': streakDays,
         'lastActionDay': lastActionDay,
         'briefing': briefing,

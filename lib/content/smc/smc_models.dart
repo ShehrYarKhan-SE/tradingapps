@@ -6,12 +6,14 @@ class SmcCandle {
     required this.high,
     required this.low,
     required this.close,
+    this.time,
   });
 
   final double open;
   final double high;
   final double low;
   final double close;
+  final DateTime? time;
 
   bool get bull => close >= open;
 }

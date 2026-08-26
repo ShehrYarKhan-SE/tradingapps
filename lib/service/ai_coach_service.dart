@@ -333,7 +333,7 @@ class AiCoachService {
         lower.contains('smc') ||
         lower.contains('ict') ||
         lower.contains('fvg')) {
-      return 'Tap Teach Me Trading (the green school button). It opens a list of ICT/SMC topics — FVG, IFVG, BPR, order block, breaker, Silver Bullet, Unicorn, Market Maker model, Turtle Soup, and more. Each topic is its own file with a US100 example chart. Home → Learning Path is still the short demo-account quizzes.';
+      return 'Tap Teach Me Trading to study a concept, then tap Quiz. Quiz uses real US100 15m history: the chart freezes, you press Buy or Sell, then it replays like TradingView and marks the lesson on the chart. Educational only.';
     }
     if (lower.contains('help') || lower.contains('what can')) {
       return 'I can: 1) daily briefing, 2) explain the US100 chart, 3) warn before oversized orders, 4) review closed demo trades, 5) walk the learning path. I do not give financial advice.';

@@ -153,6 +153,7 @@ class AiLearningStore extends ChangeNotifier {
   String? _appliedUpdatedAt;
   bool _listeningStore = false;
   final Set<String> completedIds = {};
+  final Set<String> smcReadIds = {};
   int streakDays = 0;
   String? lastActionDay;
   String briefing = '';
@@ -201,6 +202,7 @@ class AiLearningStore extends ChangeNotifier {
     _uid = null;
     _appliedUpdatedAt = null;
     completedIds.clear();
+    smcReadIds.clear();
     streakDays = 0;
     lastActionDay = null;
     briefing = '';
@@ -261,6 +263,12 @@ class AiLearningStore extends ChangeNotifier {
     }
     _persist();
     notifyListeners();
+  }
+
+  Future<void> markSmcRead(String id) async {
+    if (id.isEmpty) return;
+    smcReadIds.add(id);
+    markPracticed();
   }
 
   Future<void> completeLesson(String id) async {
@@ -327,6 +335,9 @@ class AiLearningStore extends ChangeNotifier {
     completedIds
       ..clear()
       ..addAll(((map['completed'] as List?) ?? []).map((e) => e.toString()));
+    smcReadIds
+      ..clear()
+      ..addAll(((map['smcRead'] as List?) ?? []).map((e) => e.toString()));
     streakDays = (map['streak'] as num?)?.toInt() ?? 0;
     lastActionDay = map['lastActionDay'] as String?;
     briefing = map['briefing'] as String? ?? '';
@@ -341,6 +352,7 @@ class AiLearningStore extends ChangeNotifier {
 
   Map<String, dynamic> _toMap() => {
         'completed': completedIds.toList(),
+        'smcRead': smcReadIds.toList(),
         'streak': streakDays,
         'lastActionDay': lastActionDay,
         'briefing': briefing,

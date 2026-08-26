@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
+import 'smc_library_screen.dart';
 
 const _kNavy = Color(0xFF07061A);
 const _kGlass = Color(0x99101838);
@@ -63,6 +64,13 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   Future<void> _send(String raw) async {
     final text = raw.trim();
     if (text.isEmpty || _busy) return;
+    final lower = text.toLowerCase();
+    if (lower.contains('teach me trading') ||
+        lower.contains('teach me smc') ||
+        lower.contains('ict concept')) {
+      _openSmcLibrary();
+      return;
+    }
     setState(() {
       _messages.add(_ChatMsg(me: true, text: text, time: DateTime.now()));
       _busy = true;
@@ -81,6 +89,13 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
       _busy = false;
     });
     _scrollToEnd();
+  }
+
+  void _openSmcLibrary() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SmcLibraryScreen()),
+    );
   }
 
   void _scrollToEnd() {
@@ -126,8 +141,8 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                           icon: Icons.school_rounded,
                           color: const Color(0xFF34D399),
                           title: 'Teach Me Trading',
-                          subtitle: 'Learn trading step by step.',
-                          onTap: _busy ? null : () => _send('Teach me trading step by step'),
+                          subtitle: 'ICT / SMC topics, one at a time.',
+                          onTap: _openSmcLibrary,
                         ),
                       ),
                       const SizedBox(width: 8),

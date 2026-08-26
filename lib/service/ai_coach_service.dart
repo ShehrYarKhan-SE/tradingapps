@@ -326,8 +326,14 @@ class AiCoachService {
     if (lower.contains('open') || lower.contains('position') || lower.contains('floating')) {
       return _openBook();
     }
-    if (lower.contains('lesson') || lower.contains('learn') || lower.contains('quiz')) {
-      return 'Open Learning Path from Home. Finish a short lesson, take the quiz, then place the suggested demo trade with a stop. I will review that close.';
+    if (lower.contains('lesson') ||
+        lower.contains('learn') ||
+        lower.contains('quiz') ||
+        lower.contains('teach') ||
+        lower.contains('smc') ||
+        lower.contains('ict') ||
+        lower.contains('fvg')) {
+      return 'Tap Teach Me Trading (the green school button). It opens a list of ICT/SMC topics — FVG, IFVG, BPR, order block, breaker, Silver Bullet, Unicorn, Market Maker model, Turtle Soup, and more. Each topic is its own file with a US100 example chart. Home → Learning Path is still the short demo-account quizzes.';
     }
     if (lower.contains('help') || lower.contains('what can')) {
       return 'I can: 1) daily briefing, 2) explain the US100 chart, 3) warn before oversized orders, 4) review closed demo trades, 5) walk the learning path. I do not give financial advice.';

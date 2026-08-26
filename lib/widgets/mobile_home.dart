@@ -4,8 +4,8 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/learning_path_screen.dart';
 import '../screens/profile_screen.dart';
-import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
+import '../service/home_trending_quotes.dart';
 import '../service/user_account_store.dart';
 
 class MobileHome extends StatelessWidget {
@@ -28,30 +28,6 @@ class MobileHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trendingPairs = [
-      {
-        'symbol': 'BTC/USDT',
-        'price': 42856.32,
-        'change': 2.34,
-        'volume': '2.4B',
-        'spark': [4.0, 5.0, 4.5, 6.0, 5.5, 7.0, 8.5, 8.0, 9.5],
-      },
-      {
-        'symbol': 'ETH/USDT',
-        'price': 2284.56,
-        'change': -1.23,
-        'volume': '1.2B',
-        'spark': [8.0, 7.0, 7.5, 6.0, 6.5, 5.0, 5.5, 4.0, 4.5],
-      },
-      {
-        'symbol': 'US100',
-        'price': 29295.54,
-        'change': 0.42,
-        'volume': 'NDX',
-        'spark': [5.0, 5.5, 5.2, 6.0, 6.4, 6.1, 7.0, 6.8, 7.4],
-      },
-    ];
-
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
@@ -250,50 +226,18 @@ class MobileHome extends StatelessWidget {
           ),
 
           // ---------------- Trending Markets ----------------
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Trending Markets',
-                        style: TextStyle(
-                            color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      GestureDetector(
-                        onTap: () => onOpenChart('US100'),
-                        child: Row(
-                          children: [
-                            Text('View All',
-                                style: TextStyle(color: Colors.blue[400], fontSize: 12)),
-                            Icon(Icons.chevron_right, color: Colors.blue[400], size: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...trendingPairs.map((pair) => _buildMarketItem(
-                  pair['symbol'] as String,
-                  pair['price'] as double,
-                  pair['change'] as double,
-                  pair['volume'] as String,
-                  pair['spark'] as List<double>,
-                  () => onOpenChart(pair['symbol'] as String),
-                )),
-              ],
-            ),
+          _TrendingMarkets(
+            onOpenChart: onOpenChart,
+            itemBuilder: (quote) {
+              return _buildMarketItem(
+                quote.symbol,
+                quote.price,
+                quote.changePct,
+                quote.volume,
+                quote.spark,
+                () => onOpenChart(quote.symbol),
+              );
+            },
           ),
 
           const SizedBox(height: 16),
@@ -313,7 +257,7 @@ class MobileHome extends StatelessWidget {
                         child: _buildLearningProgressCard(),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: GestureDetector(
                         onTap: () => _openLearning(context),
@@ -323,111 +267,6 @@ class MobileHome extends StatelessWidget {
                   ],
                 );
               },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListenableBuilder(
-              listenable: AiLearningStore.instance,
-              builder: (context, _) {
-                final text = AiLearningStore.instance.briefing.isEmpty
-                    ? AiCoachService.instance.dailyBriefing()
-                    : AiLearningStore.instance.briefing;
-                return GestureDetector(
-                  onTap: () => onTabChange('coach'),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.35)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(Icons.wb_twilight, color: Color(0xFFC4B5FD), size: 18),
-                            SizedBox(width: 8),
-                            Text(
-                              'Daily briefing',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          text,
-                          style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ---------------- AI Coach banner ----------------
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () => onTabChange('coach'),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.05)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.smart_toy_outlined,
-                          color: Color(0xFF8B5CF6), size: 24),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "AI Coach",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            "Get personalized tips and improve faster",
-                            style: TextStyle(color: Colors.white54, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Colors.white54, size: 20),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -652,9 +491,17 @@ class MobileHome extends StatelessWidget {
       List<double> spark,
       VoidCallback onTap,
       ) {
+    final ready = price > 0;
     final isPositive = change >= 0;
-    final color = isPositive ? Colors.green[400]! : Colors.red[400]!;
+    final color = !ready
+        ? Colors.grey[500]!
+        : isPositive
+            ? Colors.green[400]!
+            : Colors.red[400]!;
     final isIndex = symbol == 'US100';
+    final sparkValues = spark.length >= 2
+        ? spark
+        : (ready ? <double>[price * 0.998, price] : const <double>[]);
 
     return GestureDetector(
       onTap: onTap,
@@ -676,21 +523,32 @@ class MobileHome extends StatelessWidget {
                 children: [
                   Text(symbol,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                  Text(isIndex ? 'Vol: $volume' : 'Vol: \$$volume', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                  Text(
+                    isIndex
+                        ? 'Vol: $volume'
+                        : volume == '—'
+                            ? 'Vol: —'
+                            : 'Vol: \$$volume',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
                 ],
               ),
             ),
             SizedBox(
               width: 60,
               height: 28,
-              child: _Sparkline(values: spark, color: color),
+              child: sparkValues.isEmpty
+                  ? const SizedBox.shrink()
+                  : _Sparkline(values: sparkValues, color: color),
             ),
             const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '\$${price.toStringAsFixed(price < 1 ? 4 : 2)}',
+                  ready
+                      ? '\$${price.toStringAsFixed(price < 1 ? 4 : 2)}'
+                      : '—',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
                 Row(
@@ -703,7 +561,9 @@ class MobileHome extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%',
+                      ready
+                          ? '${isPositive ? '+' : ''}${change.toStringAsFixed(2)}%'
+                          : '—',
                       style: TextStyle(color: color, fontSize: 12),
                     ),
                   ],
@@ -721,7 +581,7 @@ class MobileHome extends StatelessWidget {
     final progress = store.progress;
     final pct = (progress * 100).round();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(18),
@@ -731,43 +591,47 @@ class MobileHome extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Learning Progress",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  "Learning Progress",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              Icon(Icons.menu_book_outlined, color: Color(0xFF8B5CF6), size: 18),
+              SizedBox(width: 4),
+              Icon(Icons.menu_book_outlined, color: Color(0xFF8B5CF6), size: 16),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: [
               SizedBox(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     SizedBox(
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       child: CircularProgressIndicator(
                         value: 1,
-                        strokeWidth: 6,
+                        strokeWidth: 5,
                         color: Colors.white.withOpacity(0.08),
                       ),
                     ),
                     SizedBox(
-                      width: 56,
-                      height: 56,
+                      width: 48,
+                      height: 48,
                       child: CircularProgressIndicator(
                         value: progress == 0 ? 0.02 : progress,
-                        strokeWidth: 6,
+                        strokeWidth: 5,
                         color: const Color(0xFF22C55E),
                         backgroundColor: Colors.transparent,
                         strokeCap: StrokeCap.round,
@@ -777,28 +641,32 @@ class MobileHome extends StatelessWidget {
                       "$pct%",
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Continue your journey",
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${store.completedCount} / ${store.totalLessons} Lessons",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF22C55E),
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -815,7 +683,7 @@ class MobileHome extends StatelessWidget {
   Widget _buildDailyStreakCard() {
     final days = AiLearningStore.instance.streakDays;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(18),
@@ -825,47 +693,132 @@ class MobileHome extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Daily Streak",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  "Daily Streak",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 18),
+              SizedBox(width: 4),
+              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 16),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: [
-              const Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 24),
-              const SizedBox(width: 8),
-              Text(
-                "$days Day${days == 1 ? '' : 's'}",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              const Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 22),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  "$days Day${days == 1 ? '' : 's'}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Spacer(),
-              const Icon(Icons.chevron_right, color: Colors.white54, size: 18),
+              const Icon(Icons.chevron_right, color: Colors.white54, size: 16),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             days == 0 ? "Study or trade to start" : "Keep the streak going",
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: days == 0 ? Colors.white54 : const Color(0xFF22C55E),
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _TrendingMarkets extends StatefulWidget {
+  final void Function(String symbol) onOpenChart;
+  final Widget Function(HomeMarketQuote quote) itemBuilder;
+
+  const _TrendingMarkets({
+    required this.onOpenChart,
+    required this.itemBuilder,
+  });
+
+  @override
+  State<_TrendingMarkets> createState() => _TrendingMarketsState();
+}
+
+class _TrendingMarketsState extends State<_TrendingMarkets> {
+  final _quotes = HomeTrendingQuotes.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _quotes.attach();
+  }
+
+  @override
+  void dispose() {
+    _quotes.detach();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: _quotes,
+      builder: (context, _) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.05)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Trending Markets',
+                      style: TextStyle(
+                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                    GestureDetector(
+                      onTap: () => widget.onOpenChart('US100'),
+                      child: Row(
+                        children: [
+                          Text('View All',
+                              style: TextStyle(color: Colors.blue[400], fontSize: 12)),
+                          Icon(Icons.chevron_right, color: Colors.blue[400], size: 16),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              ..._quotes.markets.map(widget.itemBuilder),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -974,5 +927,17 @@ class _SparklinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SparklinePainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SparklinePainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.values.length != values.length ||
+        !_listEq(oldDelegate.values, values);
+  }
+
+  bool _listEq(List<double> a, List<double> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../service/demo_trade_service.dart';
 import '../service/us100_quote_service.dart';
+import '../theme_controller.dart';
 
 class MobilePortfolio extends StatefulWidget {
   const MobilePortfolio({super.key});
@@ -14,8 +15,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
   String _selectedPeriod = '30D';
   final List<String> _periods = ['1D', '7D', '30D', '90D', 'All'];
 
-  static const Color cardColor = Color(0xFF141824);
-  static const Color borderColor = Color(0x1AFFFFFF);
+  AppColors get _colors => AppColors.of(context);
 
   @override
   void initState() {
@@ -169,17 +169,17 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                       decoration: BoxDecoration(
                         color: selected
                             ? const Color(0xFF3B82F6)
-                            : Colors.white.withOpacity(0.05),
+                            : _colors.card,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                             color: selected
                                 ? const Color(0xFF3B82F6)
-                                : borderColor),
+                                : _colors.border),
                       ),
                       child: Text(
                         p,
                         style: TextStyle(
-                          color: selected ? Colors.white : Colors.grey[400],
+                          color: selected ? Colors.white : _colors.muted,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -227,13 +227,13 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('$total',
-                                  style: const TextStyle(
-                                      color: Colors.white,
+                                  style: TextStyle(
+                                      color: _colors.text,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold)),
-                              const Text('Total Trades',
+                              Text('Total Trades',
                                   style: TextStyle(
-                                      color: Colors.white54, fontSize: 10)),
+                                      color: _colors.muted, fontSize: 10)),
                             ],
                           ),
                         ],
@@ -275,7 +275,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                         child: _summaryTile(
                             'Win Rate',
                             '${winRate.toStringAsFixed(1)}%',
-                            Colors.white,
+                            _colors.text,
                             '$wins / $total',
                             winRate >= 50)),
                     const SizedBox(width: 12),
@@ -326,16 +326,16 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                     padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: _colors.card,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: borderColor),
+                      border: Border.all(color: _colors.border),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('P&L',
+                        Text('P&L',
                             style: TextStyle(
-                                color: Colors.white70,
+                                color: _colors.muted,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600)),
                         Icon(Icons.keyboard_arrow_down,
@@ -416,13 +416,13 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text('$total',
-                                  style: const TextStyle(
-                                      color: Colors.white,
+                                  style: TextStyle(
+                                      color: _colors.text,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold)),
-                              const Text('Total Trades',
+                              Text('Total Trades',
                                   style: TextStyle(
-                                      color: Colors.white54, fontSize: 10)),
+                                      color: _colors.muted, fontSize: 10)),
                             ],
                           ),
                         ],
@@ -459,9 +459,9 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Recent Trades',
+                    Text('Recent Trades',
                         style: TextStyle(
-                            color: Colors.white,
+                            color: _colors.text,
                             fontSize: 14,
                             fontWeight: FontWeight.w600)),
                     Text('View All',
@@ -482,7 +482,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
                     for (var i = 0; i < shownTrades.length; i++) {
                       final t = shownTrades[i];
                       if (i > 0) {
-                        rows.add(const Divider(color: Colors.white10, height: 20));
+                        rows.add(Divider(color: _colors.border, height: 20));
                       }
                       rows.add(_tradeItem(
                         t.symbol,
@@ -508,31 +508,33 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
 
   // ---------- Helper widgets ----------
   Widget _cardWrapper({required Widget child}) {
+    final colors = _colors;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: colors.border),
       ),
       child: child,
     );
   }
 
   Widget _cardHeader(String title, {Widget? trailing}) {
+    final colors = _colors;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
             Text(title,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: colors.text,
                     fontSize: 14,
                     fontWeight: FontWeight.w600)),
             const SizedBox(width: 6),
-            Icon(Icons.info_outline, color: Colors.grey[600], size: 14),
+            Icon(Icons.info_outline, color: colors.muted, size: 14),
           ],
         ),
         if (trailing != null) trailing,
@@ -541,6 +543,7 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
   }
 
   Widget _legendRow(String label, String value, String percent, Color color) {
+    final colors = _colors;
     return Row(
       children: [
         Container(
@@ -550,28 +553,29 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
         const SizedBox(width: 8),
         Expanded(
             child: Text(label,
-                style: const TextStyle(color: Colors.white70, fontSize: 12))),
+                style: TextStyle(color: colors.muted, fontSize: 12))),
         Text(value,
-            style: const TextStyle(
-                color: Colors.white,
+            style: TextStyle(
+                color: colors.text,
                 fontSize: 12,
                 fontWeight: FontWeight.w600)),
         const SizedBox(width: 4),
-        Text(percent, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+        Text(percent, style: TextStyle(color: colors.muted, fontSize: 11)),
       ],
     );
   }
 
   Widget _summaryTile(
       String label, String value, Color valueColor, String delta, bool isUp) {
+    final colors = _colors;
     final deltaColor =
     isUp ? const Color(0xFF22C55E) : const Color(0xFFEF4444);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: colors.card,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -631,8 +635,8 @@ class _MobilePortfolioState extends State<MobilePortfolio> {
               Row(
                 children: [
                   Text(symbol,
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: _colors.text,
                           fontSize: 13,
                           fontWeight: FontWeight.w600)),
                   const SizedBox(width: 6),
@@ -689,14 +693,14 @@ class _PortfolioTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Portfolio',
+        Text('Portfolio',
             style: TextStyle(
-                color: Colors.white,
+                color: AppColors.of(context).text,
                 fontSize: 26,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 2),
         Text('Your trading performance',
-            style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            style: TextStyle(color: AppColors.of(context).muted, fontSize: 13)),
       ],
     );
   }

@@ -27,12 +27,13 @@ void main() async {
     await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   }
 
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
+    AppColors.setUiOverlay(isDarkMode.value);
 
   runApp(const VirtualTradingApp());
 }
@@ -49,18 +50,9 @@ class VirtualTradingApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Virtual Trading AI',
 
-          theme: ThemeData(
-            brightness: Brightness.light,
-            useMaterial3: true,
-          ),
-
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            useMaterial3: true,
-          ),
-
-          themeMode:
-          darkMode ? ThemeMode.dark : ThemeMode.light,
+          theme: AppColors.light(),
+          darkTheme: AppColors.darkTheme(),
+          themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
 
           home: const SplashScreen(next: AuthGate()),
         );

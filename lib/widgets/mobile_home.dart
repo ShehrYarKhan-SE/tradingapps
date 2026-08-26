@@ -8,6 +8,7 @@ import '../screens/learning_path_screen.dart';
 import '../service/ai_learning_store.dart';
 import '../service/home_trending_quotes.dart';
 import '../service/user_account_store.dart';
+import '../theme_controller.dart';
 
 class MobileHome extends StatelessWidget {
   final Function(String) onTabChange;
@@ -29,6 +30,7 @@ class MobileHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 100),
       child: Column(
@@ -96,7 +98,7 @@ class MobileHome extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: const Color(0xFF10B981),
                             shape: BoxShape.circle,
-                            border: Border.all(color: const Color(0xFF0D0D0F), width: 2),
+                            border: Border.all(color: colors.header, width: 2),
                           ),
                         ),
                       ),
@@ -108,8 +110,8 @@ class MobileHome extends StatelessWidget {
                     children: [
                       Text(
                         FirebaseAuth.instance.currentUser?.displayName ?? "User",
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: colors.text,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -138,91 +140,105 @@ class MobileHome extends StatelessWidget {
           // ---------------- Welcome Card ----------------
           Container(
             margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0B1229), Color(0xFF13214A), Color(0xFF1B1450)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.15),
-                  blurRadius: 30,
+                  color: const Color(0xFF22D3EE).withValues(alpha: 0.22),
+                  blurRadius: 28,
                   offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: const Color(0xFFD946EF).withValues(alpha: 0.16),
+                  blurRadius: 24,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -20,
-                  right: -20,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Image.asset(
+                      'assets/branding/home_welcome_bg.jpg',
+                      fit: BoxFit.cover,
+                      alignment: const Alignment(0.35, 0),
                     ),
                   ),
-                ),
-                // Decorative target + bar-chart graphic (approximates the artwork)
-                Positioned(
-                  right: -6,
-                  top: -10,
-                  child: _buildTargetGraphic(),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome back, Trader!',
-                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                  const Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color(0xF2080B22),
+                            Color(0x99080B22),
+                            Color(0x33080B22),
+                          ],
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Ready to practice?',
-                      style: TextStyle(
-                          color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Trade with virtual money,\nlearn with real confidence.',
-                      style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onTabChange('trade'),
-                            child: _buildCardButton(
-                              'Demo Mode',
-                              Icons.bolt,
-                              const Color(0xFF10B981).withOpacity(0.45),
-                              Colors.white,
-                            ),
+                        Text(
+                          'Welcome back, Trader!',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.82),
+                            fontSize: 14,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => onTabChange('coach'),
-                            child: _buildCardButton(
-                              'AI Coach',
-                              Icons.smart_toy_outlined,
-                              const Color(0xFF8B5CF6).withOpacity(0.45),
-                              Colors.white,
-                            ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Ready to practice?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Trade with virtual money,\nlearn with real confidence.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _neonButton(
+                                label: 'Demo Mode',
+                                icon: Icons.bolt,
+                                colors: const [Color(0xFF06B6D4), Color(0xFF2563EB)],
+                                glow: const Color(0xFF22D3EE),
+                                onTap: () => onTabChange('trade'),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _neonButton(
+                                label: 'AI Coach',
+                                icon: Icons.smart_toy_outlined,
+                                colors: const [Color(0xFFD946EF), Color(0xFF7C3AED)],
+                                glow: const Color(0xFFE879F9),
+                                onTap: () => onTabChange('coach'),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -237,6 +253,7 @@ class MobileHome extends StatelessWidget {
                 quote.volume,
                 quote.spark,
                 () => onOpenChart(quote.symbol),
+                colors,
               );
             },
           ),
@@ -261,7 +278,7 @@ class MobileHome extends StatelessWidget {
                             ),
                           );
                         },
-                        child: _buildLearningProgressCard(),
+                        child: _buildLearningProgressCard(colors),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -277,7 +294,7 @@ class MobileHome extends StatelessWidget {
                             ),
                           );
                         },
-                        child: _buildDailyStreakCard(),
+                        child: _buildDailyStreakCard(colors),
                       ),
                     ),
                   ],
@@ -290,138 +307,49 @@ class MobileHome extends StatelessWidget {
     );
   }
 
-  Widget _buildTargetGraphic() {
-    return SizedBox(
-      width: 160,
-      height: 150,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // Growing gradient bar chart with glow, sits behind/right of target
-          Positioned(
-            right: -4,
-            bottom: 26,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _bar(16),
-                const SizedBox(width: 5),
-                _bar(30),
-                const SizedBox(width: 5),
-                _bar(48),
-                const SizedBox(width: 5),
-                _bar(68),
-              ],
-            ),
+  Widget _neonButton({
+    required String label,
+    required IconData icon,
+    required List<Color> colors,
+    required Color glow,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(100),
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          // Concentric glowing target rings
-          Positioned(
-            left: 10,
-            top: 28,
-            child: Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.35), width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.35),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF60A5FA).withOpacity(0.55), width: 2),
-                ),
-                alignment: Alignment.center,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF93C5FD).withOpacity(0.8), width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF60A5FA).withOpacity(0.9),
-                          blurRadius: 12,
-                          spreadRadius: 2,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: glow.withValues(alpha: 0.55),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
-          ),
-          // Arrow, drawn precisely with a CustomPainter so it's always a
-          // clean straight line piercing the target's center, with the tip
-          // poking out past the top-right edge of the rings.
-          const Positioned.fill(
-            child: CustomPaint(
-              painter: _TargetArrowPainter(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bar(double height) {
-    return Container(
-      width: 12,
-      height: height,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [Color(0xFF1D4ED8), Color(0xFF60A5FA), Color(0xFFBFDBFE)],
+          ],
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF3B82F6).withOpacity(0.5),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardButton(String label, IconData icon, Color bg, Color fg) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: fg, size: 18),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600),
-          ),
-        ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -495,6 +423,7 @@ class MobileHome extends StatelessWidget {
       String volume,
       List<double> spark,
       VoidCallback onTap,
+      AppColors colors,
       ) {
     final ready = price > 0;
     final isPositive = change >= 0;
@@ -514,9 +443,9 @@ class MobileHome extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: colors.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           children: [
@@ -527,14 +456,14 @@ class MobileHome extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(symbol,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: colors.text, fontWeight: FontWeight.w600)),
                   Text(
                     isIndex
                         ? 'Vol: $volume'
                         : volume == '—'
                             ? 'Vol: —'
                             : 'Vol: \$$volume',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: TextStyle(color: colors.muted, fontSize: 12),
                   ),
                 ],
               ),
@@ -554,7 +483,7 @@ class MobileHome extends StatelessWidget {
                   ready
                       ? '\$${price.toStringAsFixed(price < 1 ? 4 : 2)}'
                       : '—',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: colors.text, fontWeight: FontWeight.w600),
                 ),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -581,21 +510,21 @@ class MobileHome extends StatelessWidget {
     );
   }
 
-  Widget _buildLearningProgressCard() {
+  Widget _buildLearningProgressCard(AppColors colors) {
     final store = AiLearningStore.instance;
     final progress = store.progress;
     final pct = (progress * 100).round();
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: colors.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: Text(
@@ -603,14 +532,14 @@ class MobileHome extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.text,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              SizedBox(width: 4),
-              Icon(Icons.menu_book_outlined, color: Color(0xFF8B5CF6), size: 16),
+              const SizedBox(width: 4),
+              const Icon(Icons.menu_book_outlined, color: Color(0xFF8B5CF6), size: 16),
             ],
           ),
           const SizedBox(height: 14),
@@ -628,7 +557,7 @@ class MobileHome extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: 1,
                         strokeWidth: 5,
-                        color: Colors.white.withOpacity(0.08),
+                        color: colors.border,
                       ),
                     ),
                     SizedBox(
@@ -644,8 +573,8 @@ class MobileHome extends StatelessWidget {
                     ),
                     Text(
                       "$pct%",
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -658,11 +587,11 @@ class MobileHome extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "Continue your journey",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.white70, fontSize: 11),
+                      style: TextStyle(color: colors.muted, fontSize: 11),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -685,19 +614,19 @@ class MobileHome extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyStreakCard() {
+  Widget _buildDailyStreakCard(AppColors colors) {
     final days = AiLearningStore.instance.streakDays;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: colors.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Expanded(
                 child: Text(
@@ -705,14 +634,14 @@ class MobileHome extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.text,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              SizedBox(width: 4),
-              Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 16),
+              const SizedBox(width: 4),
+              const Icon(Icons.local_fire_department, color: Color(0xFFF97316), size: 16),
             ],
           ),
           const SizedBox(height: 14),
@@ -725,14 +654,14 @@ class MobileHome extends StatelessWidget {
                   "$days Day${days == 1 ? '' : 's'}",
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: colors.text,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white54, size: 16),
+              Icon(Icons.chevron_right, color: colors.muted, size: 16),
             ],
           ),
           const SizedBox(height: 6),
@@ -741,7 +670,7 @@ class MobileHome extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: days == 0 ? Colors.white54 : const Color(0xFF22C55E),
+              color: days == 0 ? colors.muted : const Color(0xFF22C55E),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -782,6 +711,7 @@ class _TrendingMarketsState extends State<_TrendingMarkets> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return ListenableBuilder(
       listenable: _quotes,
       builder: (context, _) {
@@ -789,9 +719,9 @@ class _TrendingMarketsState extends State<_TrendingMarkets> {
           margin: const EdgeInsets.symmetric(horizontal: 16),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
+            color: colors.card,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
+            border: Border.all(color: colors.border),
           ),
           child: Column(
             children: [
@@ -800,10 +730,10 @@ class _TrendingMarketsState extends State<_TrendingMarkets> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Trending Markets',
                       style: TextStyle(
-                          color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                          color: colors.text, fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                     GestureDetector(
                       onTap: () => widget.onOpenChart('US100'),
@@ -842,58 +772,6 @@ class _Sparkline extends StatelessWidget {
       size: Size.infinite,
     );
   }
-}
-
-/// Draws a single clean straight arrow (shaft + triangular head) diagonally
-/// across the target graphic, from lower-left toward the upper-right.
-class _TargetArrowPainter extends CustomPainter {
-  const _TargetArrowPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Anchored relative to the target circle, which sits at
-    // left:10, top:28, 84x84 -> center is roughly (52, 70).
-    final start = Offset(30, 108);
-    final end = Offset(128, 6);
-
-    final angle = atan2(end.dy - start.dy, end.dx - start.dx);
-
-    // Soft glow pass underneath.
-    final glowPaint = Paint()
-      ..color = Colors.white.withOpacity(0.35)
-      ..strokeWidth = 8
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawLine(start, end, glowPaint);
-
-    // Crisp shaft on top.
-    final shaftPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(start, end, shaftPaint);
-
-    // Arrowhead triangle at the tip, pointing along the shaft's direction.
-    const arrowLength = 16.0;
-    const arrowSpread = pi / 7;
-    final p2 = Offset(
-      end.dx - arrowLength * cos(angle - arrowSpread),
-      end.dy - arrowLength * sin(angle - arrowSpread),
-    );
-    final p3 = Offset(
-      end.dx - arrowLength * cos(angle + arrowSpread),
-      end.dy - arrowLength * sin(angle + arrowSpread),
-    );
-    final headPath = Path()
-      ..moveTo(end.dx, end.dy)
-      ..lineTo(p2.dx, p2.dy)
-      ..lineTo(p3.dx, p3.dy)
-      ..close();
-    canvas.drawPath(headPath, Paint()..color = Colors.white);
-  }
-
-  @override
-  bool shouldRepaint(covariant _TargetArrowPainter oldDelegate) => false;
 }
 
 class _SparklinePainter extends CustomPainter {

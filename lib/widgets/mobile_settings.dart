@@ -59,11 +59,12 @@ class _MobileSettingsState extends State<MobileSettings> {
   }) async {
     final picked = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1F),
+      backgroundColor: AppColors.of(context).sheet,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
+        final sheetColors = AppColors.of(ctx);
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -72,8 +73,8 @@ class _MobileSettingsState extends State<MobileSettings> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: sheetColors.text,
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
@@ -82,7 +83,7 @@ class _MobileSettingsState extends State<MobileSettings> {
               ...options.map((o) {
                 final selected = o == current;
                 return ListTile(
-                  title: Text(o, style: const TextStyle(color: Colors.white)),
+                  title: Text(o, style: TextStyle(color: sheetColors.text)),
                   trailing: selected
                       ? const Icon(Icons.check, color: Color(0xFF22C55E))
                       : null,
@@ -358,11 +359,12 @@ class _MobileSettingsState extends State<MobileSettings> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.showTitle)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
                 "Settings",
                 style: TextStyle(
+                  color: AppColors.of(context).text,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
@@ -374,10 +376,10 @@ class _MobileSettingsState extends State<MobileSettings> {
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                color: AppColors.of(context).surface,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                  color: AppColors.of(context).border,
                 ),
               ),
               child: Row(
@@ -527,9 +529,11 @@ class _MobileSettingsState extends State<MobileSettings> {
                 },
               },
               {
-                'icon': Icons.dark_mode_outlined,
+                'icon': isDarkMode.value
+                    ? Icons.dark_mode_outlined
+                    : Icons.light_mode_outlined,
                 'label': 'Theme',
-                'subtitle': 'Change app appearance',
+                'subtitle': isDarkMode.value ? 'Dark mode' : 'Light mode',
                 'color': const Color(0xFF8B5CF6),
                 'hasSwitch': true,
                 'isDarkMode': true,
@@ -702,10 +706,10 @@ class _MobileSettingsState extends State<MobileSettings> {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+              color: AppColors.of(context).surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                color: AppColors.of(context).border,
               ),
             ),
             child: Column(
@@ -772,6 +776,7 @@ class _MobileSettingsState extends State<MobileSettings> {
                                 value: darkMode,
                                 onChanged: (value) {
                                   isDarkMode.value = value;
+                                  AppColors.setUiOverlay(value);
                                   UserAccountStore.instance.darkMode = value;
                                   UserAccountStore.instance.saveAll();
                                 },

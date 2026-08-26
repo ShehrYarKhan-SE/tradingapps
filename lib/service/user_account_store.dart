@@ -163,11 +163,13 @@ class UserAccountStore extends ChangeNotifier {
     }
     await _loadLocalFast();
     isDarkMode.value = darkMode;
+    AppColors.setUiOverlay(darkMode);
     notifyListeners();
     await _syncCloud();
     _listenCloud();
     await recordThisDevice();
     isDarkMode.value = darkMode;
+    AppColors.setUiOverlay(darkMode);
     notifyListeners();
   }
 
@@ -239,6 +241,7 @@ class UserAccountStore extends ChangeNotifier {
         _applyMap(data);
         unawaited(_writeLocal(data));
         isDarkMode.value = darkMode;
+    AppColors.setUiOverlay(darkMode);
         notifyListeners();
       } finally {
         _applyingRemote = false;

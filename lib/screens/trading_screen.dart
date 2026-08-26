@@ -13,6 +13,7 @@ import '../service/us100_quote_service.dart';
 import '../service/user_account_store.dart';
 import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
+import '../theme_controller.dart';
 import 'ai_coach_screen.dart';
 
 class TradingScreen extends StatefulWidget {
@@ -59,9 +60,10 @@ class _TradingScreenState extends State<TradingScreen> {
 
   void _explainChart() {
     final text = AiCoachService.instance.explainChart(selectedSymbol);
+    final colors = AppColors.of(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF141B2E),
+      backgroundColor: colors.sheet,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -72,16 +74,16 @@ class _TradingScreenState extends State<TradingScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Chart explainer',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                style: TextStyle(color: colors.text, fontWeight: FontWeight.w700, fontSize: 16),
               ),
               const SizedBox(height: 8),
-              Text(text, style: const TextStyle(color: Colors.white70, height: 1.4)),
+              Text(text, style: TextStyle(color: colors.muted, height: 1.4)),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Educational only — not a buy or sell signal.',
-                style: TextStyle(color: Colors.white38, fontSize: 11),
+                style: TextStyle(color: colors.muted.withValues(alpha: 0.8), fontSize: 11),
               ),
             ],
           ),
@@ -99,9 +101,10 @@ class _TradingScreenState extends State<TradingScreen> {
   }
 
   Widget _chartSymbolBar() {
+    final colors = AppColors.of(context);
     return Container(
       width: double.infinity,
-      color: const Color(0xFF121212),
+      color: colors.header,
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       child: Row(
         children: [
@@ -117,18 +120,18 @@ class _TradingScreenState extends State<TradingScreen> {
                   decoration: BoxDecoration(
                     color: selected
                         ? const Color(0xFF2563EB)
-                        : Colors.white.withOpacity(0.06),
+                        : colors.card,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
                       color: selected
                           ? const Color(0xFF2563EB)
-                          : Colors.white12,
+                          : colors.border,
                     ),
                   ),
                   child: Text(
                     s,
                     style: TextStyle(
-                      color: selected ? Colors.white : Colors.white70,
+                      color: selected ? Colors.white : colors.text,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -159,9 +162,9 @@ class _TradingScreenState extends State<TradingScreen> {
               ),
             )
           else
-            const Text(
+            Text(
               'Live · drawings · indicators',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+              style: TextStyle(color: colors.muted, fontSize: 11),
             ),
         ],
       ),
@@ -190,10 +193,11 @@ class _TradingScreenState extends State<TradingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     if (!_booted) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF09090B),
-        body: Center(
+      return Scaffold(
+        backgroundColor: colors.scaffold,
+        body: const Center(
           child: CircularProgressIndicator(color: Color(0xFF2563EB)),
         ),
       );
@@ -202,7 +206,7 @@ class _TradingScreenState extends State<TradingScreen> {
     final isTrade = activeTab == 'trade';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF09090B),
+      backgroundColor: colors.scaffold,
       body: SafeArea(
         child: Column(
           children: [
@@ -221,7 +225,7 @@ class _TradingScreenState extends State<TradingScreen> {
                   ),
                   if (activeTab == 'home')
                     ColoredBox(
-                      color: const Color(0xFF09090B),
+                      color: colors.scaffold,
                       child: MobileHome(
                         onTabChange: setActiveTab,
                         onOpenChart: openChart,
@@ -235,14 +239,14 @@ class _TradingScreenState extends State<TradingScreen> {
                     ),
                   ),
                   if (activeTab == 'portfolio')
-                    const ColoredBox(
-                      color: Color(0xFF09090B),
-                      child: MobilePortfolio(),
+                    ColoredBox(
+                      color: colors.scaffold,
+                      child: const MobilePortfolio(),
                     ),
                   if (activeTab == 'settings')
-                    const ColoredBox(
-                      color: Color(0xFF09090B),
-                      child: MobileSettings(),
+                    ColoredBox(
+                      color: colors.scaffold,
+                      child: const MobileSettings(),
                     ),
                 ],
               ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../screens/ai_coach_screen.dart';
 import '../screens/learning_path_screen.dart';
 import '../service/ai_learning_store.dart';
+import '../theme_controller.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -12,9 +13,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  static const Color bgColor = Color(0xFF0B1120);
-  static const Color cardColor = Color(0xFF141B2E);
-  static const Color borderColor = Color(0xFF232B41);
 
   @override
   void initState() {
@@ -73,23 +71,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text("Notifications", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text("Notifications", style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListenableBuilder(
         listenable: AiLearningStore.instance,
         builder: (context, _) {
           final notifications = AiLearningStore.instance.notices;
           if (notifications.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 "No coach notices yet. Open Home for today’s briefing.",
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(color: colors.muted),
               ),
             );
           }
@@ -106,9 +105,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: cardColor,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: borderColor),
+                    border: Border.all(color: colors.border),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,8 +127,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           children: [
                             Text(
                               n.title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.text,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
@@ -137,14 +136,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             const SizedBox(height: 2),
                             Text(
                               n.subtitle,
-                              style: const TextStyle(color: Colors.white54, fontSize: 12),
+                              style: TextStyle(color: colors.muted, fontSize: 12),
                             ),
                           ],
                         ),
                       ),
                       Text(
                         _ago(n.time),
-                        style: const TextStyle(color: Colors.white38, fontSize: 11),
+                        style: TextStyle(color: colors.muted, fontSize: 11),
                       ),
                     ],
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../service/demo_trade_service.dart';
 import '../service/user_account_store.dart';
+import '../theme_controller.dart';
 
 // ===========================================================
 // All secondary menu screens combined into ONE file:
@@ -22,8 +23,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
   bool _biometricEnabled = UserAccountStore.instance.biometricEnabled;
   bool _loginAlerts = UserAccountStore.instance.loginAlerts;
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
+  Color get _bg => AppColors.of(context).scaffold;
+  Color get _card => AppColors.of(context).surface;
   static const _accent = Color(0xFF22C55E);
 
   void _changePassword() {
@@ -36,7 +37,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _card,
-        title: const Text('Change Password', style: TextStyle(color: Colors.white)),
+        title: Text('Change Password', style: TextStyle(color: AppColors.of(context).text)),
         content: Form(
           key: formKey,
           child: Column(
@@ -110,7 +111,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
     return TextField(
       controller: ctrl,
       obscureText: true,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.of(context).text),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[500]),
@@ -161,7 +162,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(title, style: TextStyle(color: AppColors.of(context).text, fontSize: 14, fontWeight: FontWeight.w500)),
                 Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
               ],
             ),
@@ -203,7 +204,7 @@ class _SecurityScreenState extends State<SecurityScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                    Text(title, style: TextStyle(color: AppColors.of(context).text, fontSize: 14, fontWeight: FontWeight.w500)),
                     Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                   ],
                 ),
@@ -223,8 +224,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text('Security', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Security', style: TextStyle(color: AppColors.of(context).text)),
+        iconTheme: IconThemeData(color: AppColors.of(context).text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -312,8 +313,8 @@ class _WalletScreenState extends State<WalletScreen> {
 
   double get _balance => _demo.balance;
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
+  Color get _bg => AppColors.of(context).scaffold;
+  Color get _card => AppColors.of(context).surface;
   static const _purple = Color(0xFF8B5CF6);
 
   void _showAmountSheet({required String title, required Color color, required bool isDeposit}) {
@@ -326,23 +327,23 @@ class _WalletScreenState extends State<WalletScreen> {
         padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: _card,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title, style: TextStyle(color: AppColors.of(context).text, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: ctrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(color: Colors.white, fontSize: 22),
+                style: TextStyle(color: AppColors.of(context).text, fontSize: 22),
                 decoration: InputDecoration(
                   prefixText: '\$ ',
-                  prefixStyle: const TextStyle(color: Colors.white, fontSize: 22),
+                  prefixStyle: TextStyle(color: AppColors.of(context).text, fontSize: 22),
                   hintText: '0.00',
                   hintStyle: TextStyle(color: Colors.grey[600]),
                   filled: true,
@@ -407,7 +408,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+            child: Text(label, style: TextStyle(color: AppColors.of(context).text, fontSize: 14, fontWeight: FontWeight.w500)),
           ),
           Text(
             '${isPositive ? '+' : '-'}\$$amount',
@@ -451,8 +452,8 @@ class _WalletScreenState extends State<WalletScreen> {
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text('Wallet', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Wallet', style: TextStyle(color: AppColors.of(context).text)),
+        iconTheme: IconThemeData(color: AppColors.of(context).text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -549,8 +550,7 @@ class _Reward {
 }
 
 class _RewardsScreenState extends State<RewardsScreen> {
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
+  Color get _bg => AppColors.of(context).scaffold;
   static const _orange = Color(0xFFF59E0B);
 
   final List<_Reward> _rewards = [
@@ -596,14 +596,15 @@ class _RewardsScreenState extends State<RewardsScreen> {
   @override
   Widget build(BuildContext context) {
     final claimableCount = _rewards.where((r) => !r.claimed).length;
+    final colors = AppColors.of(context);
 
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text('Rewards', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Rewards', style: TextStyle(color: AppColors.of(context).text)),
+        iconTheme: IconThemeData(color: AppColors.of(context).text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -638,7 +639,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: _card,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.06)),
             ),
@@ -654,7 +655,7 @@ class _RewardsScreenState extends State<RewardsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(r.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                      Text(r.title, style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w600)),
                       Text(r.subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
                       const SizedBox(height: 4),
                       Text(r.amount, style: TextStyle(color: _orange, fontWeight: FontWeight.bold, fontSize: 13)),
@@ -684,18 +685,17 @@ class _RewardsScreenState extends State<RewardsScreen> {
 class VipStatusScreen extends StatelessWidget {
   const VipStatusScreen({super.key});
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
   static const _gold = Color(0xFFFACC15);
 
-  Widget _perkTile(IconData icon, String title, String subtitle) {
+  Widget _perkTile(BuildContext context, IconData icon, String title, String subtitle) {
+    final colors = AppColors.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: _card,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: colors.border),
       ),
       child: Row(
         children: [
@@ -709,8 +709,8 @@ class VipStatusScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                Text(subtitle, style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                Text(title, style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(subtitle, style: TextStyle(color: colors.muted, fontSize: 11)),
               ],
             ),
           ),
@@ -723,14 +723,15 @@ class VipStatusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const double progress = 0.68; // trading volume progress toward next tier
+    final colors = AppColors.of(context);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text('VIP Status', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('VIP Status', style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -783,12 +784,12 @@ class VipStatusScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 10),
-            child: Text('YOUR PERKS', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w600)),
+            child: Text('YOUR PERKS', style: TextStyle(color: colors.muted, fontSize: 12, fontWeight: FontWeight.w600)),
           ),
-          _perkTile(Icons.speed, 'Priority Order Execution', 'Faster trade matching'),
-          _perkTile(Icons.percent, 'Reduced Trading Fees', '0.05% instead of 0.10%'),
-          _perkTile(Icons.support_agent, '24/7 Priority Support', 'Dedicated help line'),
-          _perkTile(Icons.analytics, 'Advanced Analytics', 'Deeper market insights'),
+          _perkTile(context, Icons.speed, 'Priority Order Execution', 'Faster trade matching'),
+          _perkTile(context, Icons.percent, 'Reduced Trading Fees', '0.05% instead of 0.10%'),
+          _perkTile(context, Icons.support_agent, '24/7 Priority Support', 'Dedicated help line'),
+          _perkTile(context, Icons.analytics, 'Advanced Analytics', 'Deeper market insights'),
         ],
       ),
     );
@@ -799,8 +800,6 @@ class VipStatusScreen extends StatelessWidget {
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
   static const _cyan = Color(0xFF06B6D4);
 
   static const _faqs = [
@@ -824,13 +823,14 @@ class HelpCenterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text('Help Center', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Help Center', style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -839,7 +839,7 @@ class HelpCenterScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Material(
-                  color: _card,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
@@ -852,10 +852,10 @@ class HelpCenterScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Column(
-                        children: const [
-                          Icon(Icons.chat_bubble_outline, color: _cyan, size: 26),
-                          SizedBox(height: 8),
-                          Text('Live Chat', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        children: [
+                          const Icon(Icons.chat_bubble_outline, color: _cyan, size: 26),
+                          const SizedBox(height: 8),
+                          Text('Live Chat', style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -865,7 +865,7 @@ class HelpCenterScreen extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Material(
-                  color: _card,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
@@ -878,10 +878,10 @@ class HelpCenterScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       child: Column(
-                        children: const [
-                          Icon(Icons.email_outlined, color: Colors.orange, size: 26),
-                          SizedBox(height: 8),
-                          Text('Email Us', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                        children: [
+                          const Icon(Icons.email_outlined, color: Colors.orange, size: 26),
+                          const SizedBox(height: 8),
+                          Text('Email Us', style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -899,7 +899,7 @@ class HelpCenterScreen extends StatelessWidget {
           ..._faqs.map((f) => Container(
             margin: const EdgeInsets.only(bottom: 10),
             decoration: BoxDecoration(
-              color: _card,
+              color: colors.surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: Colors.white.withOpacity(0.06)),
             ),
@@ -908,7 +908,7 @@ class HelpCenterScreen extends StatelessWidget {
               child: ExpansionTile(
                 iconColor: _cyan,
                 collapsedIconColor: Colors.grey,
-                title: Text(f['q']!, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w500)),
+                title: Text(f['q']!, style: TextStyle(color: colors.text, fontSize: 13.5, fontWeight: FontWeight.w500)),
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -930,9 +930,6 @@ class HelpCenterScreen extends StatelessWidget {
 class LoginActivityScreen extends StatelessWidget {
   const LoginActivityScreen({super.key});
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
-
   String _ago(DateTime time) {
     final d = DateTime.now().difference(time);
     if (d.inMinutes < 1) return 'Just now';
@@ -943,23 +940,24 @@ class LoginActivityScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text('Login Activity', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Login Activity', style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListenableBuilder(
         listenable: UserAccountStore.instance,
         builder: (context, _) {
           final items = UserAccountStore.instance.loginHistory;
           if (items.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
                 'No sign-ins recorded yet',
-                style: TextStyle(color: Colors.white54),
+                style: TextStyle(color: colors.muted),
               ),
             );
           }
@@ -972,7 +970,7 @@ class LoginActivityScreen extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: _card,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.white.withOpacity(0.06)),
                 ),
@@ -986,8 +984,8 @@ class LoginActivityScreen extends StatelessWidget {
                         children: [
                           Text(
                             e.device,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: colors.text,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1016,18 +1014,16 @@ class LoginActivityScreen extends StatelessWidget {
 class DevicesScreen extends StatelessWidget {
   const DevicesScreen({super.key});
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
-
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text('Devices', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Devices', style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListenableBuilder(
         listenable: UserAccountStore.instance,
@@ -1038,12 +1034,12 @@ class DevicesScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               if (items.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 40),
+                Padding(
+                  padding: const EdgeInsets.only(top: 40),
                   child: Center(
                     child: Text(
                       'No devices linked yet',
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: colors.muted),
                     ),
                   ),
                 ),
@@ -1052,7 +1048,7 @@ class DevicesScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _card,
+                    color: colors.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: Colors.white.withOpacity(0.06)),
                   ),
@@ -1066,8 +1062,8 @@ class DevicesScreen extends StatelessWidget {
                           children: [
                             Text(
                               d.name,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: colors.text,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1119,8 +1115,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   final _message = TextEditingController();
   bool _sending = false;
 
-  static const _bg = Color(0xFF0D0D0F);
-  static const _card = Color(0xFF1A1A1F);
+  Color get _bg => AppColors.of(context).scaffold;
 
   @override
   void dispose() {
@@ -1156,27 +1151,28 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       appBar: AppBar(
         backgroundColor: _bg,
         elevation: 0,
-        title: const Text('Contact Us', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('Contact Us', style: TextStyle(color: AppColors.of(context).text)),
+        iconTheme: IconThemeData(color: AppColors.of(context).text),
       ),
       body: ListenableBuilder(
         listenable: UserAccountStore.instance,
         builder: (context, _) {
           final tickets = UserAccountStore.instance.supportTickets;
+          final colors = AppColors.of(context);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _card,
+                  color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   children: [
                     TextField(
                       controller: _subject,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.of(context).text),
                       decoration: InputDecoration(
                         hintText: 'Subject',
                         hintStyle: TextStyle(color: Colors.grey[500]),
@@ -1193,7 +1189,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                       controller: _message,
                       minLines: 4,
                       maxLines: 6,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.of(context).text),
                       decoration: InputDecoration(
                         hintText: 'How can we help?',
                         hintStyle: TextStyle(color: Colors.grey[500]),
@@ -1232,7 +1228,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: _card,
+                      color: colors.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -1240,8 +1236,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                       children: [
                         Text(
                           t['subject']?.toString() ?? 'Message',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: colors.text,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -1266,43 +1262,42 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
 
-  static const _bg = Color(0xFF0D0D0F);
-
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _bg,
+        backgroundColor: colors.scaffold,
         elevation: 0,
-        title: const Text('About Us', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text('About Us', style: TextStyle(color: colors.text)),
+        iconTheme: IconThemeData(color: colors.text),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
-        children: const [
-          Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 48),
-          SizedBox(height: 12),
+        children: [
+          const Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 48),
+          const SizedBox(height: 12),
           Text(
             'Virtual Trading AI',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white,
+              color: colors.text,
               fontSize: 22,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'Version 1.0.0',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54),
+            style: TextStyle(color: colors.muted),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Text(
             'Practice demo trading with a live US100 chart, a virtual wallet, and an AI coach. '
             'This app is educational only — it is not a broker and it does not give financial advice.',
-            style: TextStyle(color: Colors.white70, height: 1.45, fontSize: 14),
+            style: TextStyle(color: colors.muted, height: 1.45, fontSize: 14),
           ),
         ],
       ),

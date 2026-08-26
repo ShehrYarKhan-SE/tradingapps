@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../service/ai_coach_service.dart';
 import '../service/ai_learning_store.dart';
+import '../theme_controller.dart';
 import 'smc_library_screen.dart';
 import 'smc_quiz_library_screen.dart';
 
@@ -207,13 +208,14 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
     if (widget.embedded) return body;
 
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: _kNavy,
+      backgroundColor: colors.dark ? _kNavy : colors.scaffold,
       appBar: AppBar(
-        backgroundColor: _kNavy,
+        backgroundColor: colors.dark ? _kNavy : colors.scaffold,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('AI Coach', style: TextStyle(color: Colors.white)),
+        iconTheme: IconThemeData(color: colors.text),
+        title: Text('AI Coach', style: TextStyle(color: colors.text)),
       ),
       body: body,
     );

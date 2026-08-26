@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/profile_screen.dart';
+import '../theme_controller.dart';
 
 class BottomNavigation extends StatelessWidget {
   final String activeTab;
@@ -17,6 +18,8 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final inactive = colors.muted;
     final navItems = [
       {'id': 'home', 'icon': Icons.home_outlined, 'activeIcon': Icons.home, 'label': 'Home'},
       {'id': 'trade', 'icon': Icons.swap_horiz, 'activeIcon': Icons.swap_horiz, 'label': 'Trade'},
@@ -30,9 +33,9 @@ class BottomNavigation extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
       decoration: BoxDecoration(
-        color: const Color(0xF2141B2E),
+        color: colors.nav,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        border: Border.all(color: colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -48,7 +51,7 @@ class BottomNavigation extends StatelessWidget {
           final isCoach = id == 'coach';
           final color = isActive
               ? (isCoach ? coachColor : activeColor)
-              : inactiveColor;
+              : inactive;
 
           return Expanded(
             child: GestureDetector(

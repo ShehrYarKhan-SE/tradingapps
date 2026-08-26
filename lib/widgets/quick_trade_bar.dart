@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../service/demo_trade_service.dart';
 import '../service/us100_quote_service.dart';
 import '../service/ai_coach_service.dart';
+import '../theme_controller.dart';
 
 /// MT5-style one-click bar: SELL | lot size | BUY
 class QuickTradeBar extends StatefulWidget {
@@ -69,7 +70,7 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
     if (risk.shouldWarn) {
       final go = await showModalBottomSheet<bool>(
         context: context,
-        backgroundColor: const Color(0xFF141B2E),
+        backgroundColor: AppColors.of(context).sheet,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
         ),
@@ -80,7 +81,7 @@ class _QuickTradeBarState extends State<QuickTradeBar> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(risk.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                Text(risk.title, style: TextStyle(color: AppColors.of(context).text, fontSize: 16, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 10),
                 ...risk.points.map(
                   (p) => Padding(

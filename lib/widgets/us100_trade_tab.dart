@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../service/demo_trade_service.dart';
 import '../service/us100_quote_service.dart';
+import '../theme_controller.dart';
 
 class Us100QuoteStrip extends StatelessWidget {
   const Us100QuoteStrip({super.key});
@@ -15,14 +16,14 @@ class Us100QuoteStrip extends StatelessWidget {
       builder: (context, _) {
         return Container(
           width: double.infinity,
-          color: const Color(0xFF1A1A1A),
+          color: AppColors.of(context).header,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           child: Row(
             children: [
-              const Text(
+              Text(
                 'US100  M15',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.of(context).text,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -32,7 +33,7 @@ class Us100QuoteStrip extends StatelessWidget {
                 child: Text(
                   'CFD · Nasdaq 100  ·  ${quotes.last > 0 ? quotes.last.toStringAsFixed(2) : '—'}  ·  Demo \$${demo.balance.toStringAsFixed(2)}',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: TextStyle(color: AppColors.of(context).muted, fontSize: 11),
                 ),
               ),
               Text(

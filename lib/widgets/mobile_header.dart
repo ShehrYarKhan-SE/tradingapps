@@ -6,6 +6,7 @@ import '../screens/Notification_Screen.dart';
 import '../screens/menu_screens.dart';
 import '../screens/profile_screen.dart';
 import 'mobile_settings.dart';
+import '../theme_controller.dart';
 
 class MobileHeader extends StatefulWidget {
   final String mode;
@@ -108,16 +109,19 @@ class _MobileHeaderState extends State<MobileHeader> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Scaffold(
-                backgroundColor: const Color(0xFF0D0D0F),
-                appBar: AppBar(
-                  backgroundColor: const Color(0xFF0D0D0F),
-                  elevation: 0,
-                  title: const Text("Settings", style: TextStyle(color: Colors.white)),
-                  iconTheme: const IconThemeData(color: Colors.white),
-                ),
-                body: const MobileSettings(showTitle: false),
-              ),
+              builder: (context) {
+                final colors = AppColors.of(context);
+                return Scaffold(
+                  backgroundColor: colors.scaffold,
+                  appBar: AppBar(
+                    backgroundColor: colors.header,
+                    elevation: 0,
+                    title: Text("Settings", style: TextStyle(color: colors.text)),
+                    iconTheme: IconThemeData(color: colors.text),
+                  ),
+                  body: const MobileSettings(showTitle: false),
+                );
+              },
             ),
           );
         },
@@ -136,12 +140,13 @@ class _MobileHeaderState extends State<MobileHeader> {
       },
     ];
 
+    final colors = AppColors.of(context);
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1F),
+        color: colors.sheet,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: colors.border),
         boxShadow: [
           BoxShadow(
             color: const Color(0xFF8B5CF6).withOpacity(0.1),
@@ -158,7 +163,7 @@ class _MobileHeaderState extends State<MobileHeader> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
+                bottom: BorderSide(color: colors.border),
               ),
             ),
             child: Row(
@@ -170,8 +175,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                   children: [
                     Text(
                       FirebaseAuth.instance.currentUser?.displayName ?? "User",
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: colors.text,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -223,7 +228,7 @@ class _MobileHeaderState extends State<MobileHeader> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(color: Colors.white.withOpacity(0.05)),
+                top: BorderSide(color: colors.border),
               ),
             ),
             child: _buildMenuItem(
@@ -349,8 +354,8 @@ class _MobileHeaderState extends State<MobileHeader> {
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.of(context).text,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -488,31 +493,30 @@ class _MobileHeaderState extends State<MobileHeader> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF0D0D0F),
+      decoration: BoxDecoration(
+        color: colors.header,
       ),
       child: Row(
         children: [
-          // Hamburger menu - clickable, no border/box
           GestureDetector(
             onTap: _showMenu,
-            child: Icon(Icons.menu, color: Colors.grey[300], size: 22),
+            child: Icon(Icons.menu, color: colors.text, size: 22),
           ),
 
           const Spacer(),
 
-          // Center - App Branding
           Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
-              SizedBox(width: 6),
+            children: [
+              const Icon(Icons.bolt, color: Color(0xFF3B82F6), size: 18),
+              const SizedBox(width: 6),
               Text(
                 "Virtual Trading AI",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.text,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -546,7 +550,7 @@ class _MobileHeaderState extends State<MobileHeader> {
                       alignment: Alignment.center,
                       clipBehavior: Clip.none,
                       children: [
-                        Icon(Icons.notifications_outlined, color: Colors.grey[400], size: 22),
+                        Icon(Icons.notifications_outlined, color: colors.muted, size: 22),
                         if (notificationCount > 0)
                           Positioned(
                             top: 4,

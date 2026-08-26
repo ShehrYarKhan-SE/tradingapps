@@ -7,6 +7,7 @@ import '../service/auth_service.dart';
 import '../service/demo_trade_service.dart';
 import '../service/user_account_store.dart';
 import '../service/ai_learning_store.dart';
+import '../theme_controller.dart';
 import 'Notification_Screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -129,15 +130,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ---------------- Colors (dark theme like the screenshot) ----------------
-  static const Color bgColor = Color(0xFF0B1120);
-  static const Color cardColor = Color(0xFF141B2E);
-  static const Color borderColor = Color(0xFF232B41);
+  Color get bgColor => AppColors.of(context).scaffold;
+  Color get cardColor => AppColors.of(context).surface;
+  Color get borderColor => AppColors.of(context).border;
   static const Color accentBlue = Color(0xFF3B82F6);
   static const Color accentPurple = Color(0xFF7C3AED);
   static const Color accentGreen = Color(0xFF22C55E);
   static const Color accentOrange = Color(0xFFF59E0B);
-  static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Color(0xFF94A3B8);
+  Color get textPrimary => AppColors.of(context).text;
+  Color get textSecondary => AppColors.of(context).muted;
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -162,11 +163,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: cardColor,
-          title: const Text("Edit Username", style: TextStyle(color: textPrimary)),
+          title: Text("Edit Username", style: TextStyle(color: textPrimary)),
           content: TextField(
             controller: controller,
-            style: const TextStyle(color: textPrimary),
-            decoration: const InputDecoration(
+            style: TextStyle(color: textPrimary),
+            decoration: InputDecoration(
               hintText: "Enter new username",
               hintStyle: TextStyle(color: textSecondary),
             ),
@@ -221,12 +222,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      style: const TextStyle(color: textPrimary, fontSize: 14),
+      style: TextStyle(color: textPrimary, fontSize: 14),
       decoration: InputDecoration(
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         hintText: hint,
-        hintStyle: const TextStyle(color: textSecondary, fontSize: 13),
+        hintStyle: TextStyle(color: textSecondary, fontSize: 13),
         suffixIcon: IconButton(
           padding: EdgeInsets.zero,
           iconSize: 18,
@@ -255,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: cardColor,
           contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          title: const Text(
+          title: Text(
             "Change Password",
             style: TextStyle(color: textPrimary, fontSize: 16),
           ),
@@ -367,8 +368,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: const Text("Logout", style: TextStyle(color: textPrimary)),
-        content: const Text(
+        title: Text("Logout", style: TextStyle(color: textPrimary)),
+        content: Text(
           "Are you sure you want to logout?",
           style: TextStyle(color: textSecondary),
         ),
@@ -398,8 +399,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: const Text("Delete Account", style: TextStyle(color: textPrimary)),
-        content: const Text(
+        title: Text("Delete Account", style: TextStyle(color: textPrimary)),
+        content: Text(
           "Are you sure? This action cannot be undone.",
           style: TextStyle(color: textSecondary),
         ),
@@ -445,10 +446,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: cardColor,
-        title: Text(title, style: const TextStyle(color: textPrimary)),
+        title: Text(title, style: TextStyle(color: textPrimary)),
         content: TextField(
           controller: controller,
-          style: const TextStyle(color: textPrimary),
+          style: TextStyle(color: textPrimary),
         ),
         actions: [
           TextButton(
@@ -476,12 +477,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       showPhoneCode: false,
       countryListTheme: CountryListThemeData(
         backgroundColor: cardColor,
-        textStyle: const TextStyle(color: textPrimary),
-        searchTextStyle: const TextStyle(color: textPrimary),
+        textStyle: TextStyle(color: textPrimary),
+        searchTextStyle: TextStyle(color: textPrimary),
         inputDecoration: InputDecoration(
           hintText: "Search country",
-          hintStyle: const TextStyle(color: textSecondary),
-          prefixIcon: const Icon(Icons.search, color: textSecondary),
+          hintStyle: TextStyle(color: textSecondary),
+          prefixIcon: Icon(Icons.search, color: textSecondary),
           filled: true,
           fillColor: bgColor,
           border: OutlineInputBorder(
@@ -510,14 +511,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: bgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textPrimary),
+          icon: Icon(Icons.arrow_back, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.bolt, color: accentBlue),
-            SizedBox(width: 6),
+          children: [
+            const Icon(Icons.bolt, color: accentBlue),
+            const SizedBox(width: 6),
             Text(
               "Virtual Trading AI",
               style: TextStyle(
@@ -546,7 +547,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    const Icon(Icons.notifications_none, color: textPrimary, size: 26),
+                    Icon(Icons.notifications_none, color: textPrimary, size: 26),
                     if (n > 0)
                       Positioned(
                         right: -2,
@@ -575,7 +576,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Profile",
               style: TextStyle(
                 color: textPrimary,
@@ -611,7 +612,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           backgroundImage:
                           _profileImage != null ? FileImage(_profileImage!) : null,
                           child: _profileImage == null
-                              ? const Icon(Icons.person, size: 40, color: textPrimary)
+                              ? Icon(Icons.person, size: 40, color: textPrimary)
                               : null,
                         ),
                       ),
@@ -643,7 +644,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Flexible(
                               child: Text(
                                 currentUser?.displayName ?? "No Name",
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: textPrimary,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -660,16 +661,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 4),
                         Text(
                           currentUser?.email ?? "",
-                          style: const TextStyle(color: textSecondary, fontSize: 13),
+                          style: TextStyle(color: textSecondary, fontSize: 13),
                         ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 12, color: textSecondary),
+                            Icon(Icons.calendar_today, size: 12, color: textSecondary),
                             const SizedBox(width: 4),
                             Text(
                               _getMemberSinceText(currentUser),
-                              style: const TextStyle(color: textSecondary, fontSize: 12),
+                              style: TextStyle(color: textSecondary, fontSize: 12),
                             ),
                           ],
                         ),
@@ -870,7 +871,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           "No real money is used.\nPractice and build your skills risk-free.",
                           style: TextStyle(color: textSecondary, fontSize: 12),
                         ),
@@ -914,7 +915,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           color: textPrimary,
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -959,9 +960,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String value,
     required VoidCallback onTap,
     Widget? trailing,
-    Color titleColor = textPrimary,
+    Color? titleColor,
     bool isLast = false,
   }) {
+    final resolvedTitle = titleColor ?? textPrimary;
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -969,7 +971,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           border: isLast
               ? null
-              : const Border(bottom: BorderSide(color: borderColor, width: 1)),
+              : Border(bottom: BorderSide(color: borderColor, width: 1)),
         ),
         child: Row(
           children: [
@@ -989,7 +991,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: titleColor,
+                      color: resolvedTitle,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -999,7 +1001,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         value,
-                        style: const TextStyle(color: textSecondary, fontSize: 12),
+                        style: TextStyle(color: textSecondary, fontSize: 12),
                       ),
                     ),
                 ],
@@ -1007,7 +1009,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             if (trailing != null) trailing,
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: textSecondary, size: 18),
+            Icon(Icons.chevron_right, color: textSecondary, size: 18),
           ],
         ),
       ),
@@ -1019,7 +1021,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       onTap: () {},
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: borderColor, width: 1)),
         ),
         child: Row(
@@ -1040,7 +1042,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         "Subscription Plan",
                         style: TextStyle(
                           color: textPrimary,
@@ -1056,13 +1058,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(
                       _plan,
-                      style: const TextStyle(color: textSecondary, fontSize: 12),
+                      style: TextStyle(color: textSecondary, fontSize: 12),
                     ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: textSecondary, size: 18),
+            Icon(Icons.chevron_right, color: textSecondary, size: 18),
           ],
         ),
       ),
